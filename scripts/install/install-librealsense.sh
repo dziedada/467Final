@@ -29,6 +29,4 @@ cmake ../
 make
 sudo make install
 
-echo "YEE. Have a nice day! =)"
-
 cd $GNC_DIR
