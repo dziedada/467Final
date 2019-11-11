@@ -24,12 +24,12 @@ class Rexarm():
         self.gripper_state = True
         self.estop = False
         """TODO: Find the physical angle limits of the Rexarm. Remember to keep track of this if you include more motors"""
-        self.angle_limits = np.array([
-                            [-180, 179.99],
-                            [-180, 179.99],
-                            [-180, 179.99],
-                            [-180, 179.99],
-                            [-180, 179.99],], dtype=np.float)*D2R
+        angle_max = 95.0
+        angle_min = -95.0
+        self.angle_limits = np.array(
+            [[angle_min, angle_min, angle_min, angle_min, angle_min],
+             [angle_max, angle_max, angle_max, angle_max, angle_max]],
+            dtype=np.float) * D2R
 
         """ Commanded Values """
         self.num_joints = len(joints)
@@ -44,15 +44,17 @@ class Rexarm():
         self.temp_fb = [0.0] * self.num_joints         # Celsius
         self.move_fb = [0] *  self.num_joints
 
+        self.num_tries = 512
+
     def initialize(self):
         for joint in self.joints:
-            joint.enable_torque()
-            joint.set_position(0.0)
-            joint.set_torque_limit(0.5)
-            joint.set_speed(0.25)
+            joint.enable_torque(num_tries=self.num_tries)
+            joint.set_position(0.0, num_tries=self.num_tries)
+            joint.set_torque_limit(0.5, num_tries=self.num_tries)
+            joint.set_speed(0.25, num_tries=self.num_tries)
         if(self.gripper != 0):
-            self.gripper.set_torque_limit(1.0)
-            self.gripper.set_speed(0.8)
+            self.gripper.set_torque_limit(1.0, num_tries=self.num_tries)
+            self.gripper.set_speed(0.8, num_tries=self.num_tries)
             self.close_gripper()
 
     def open_gripper(self):
@@ -74,19 +76,19 @@ class Rexarm():
         for i,joint in enumerate(self.joints):
             self.position[i] = joint_angles[i]
             if(update_now):
-                joint.set_position(joint_angles[i])
+                joint.set_position(joint_angles[i], num_tries=self.num_tries)
     
     def set_speeds_normalized_global(self, speed, update_now = True):
         for i,joint in enumerate(self.joints):
             self.speed[i] = speed
             if(update_now):
-                joint.set_speed(speed)
+                joint.set_speed(speed, num_tries=self.num_tries)
 
     def set_speeds_normalized(self, speeds, update_now = True):
         for i,joint in enumerate(self.joints):
             self.speed[i] = speeds[i]
             if(update_now):
-                joint.set_speed(speeds[i])
+                joint.set_speed(speeds[i], num_tries=self.num_tries)
 
     def set_speeds(self, speeds, update_now = True):
         for i,joint in enumerate(self.joints):
@@ -95,13 +97,13 @@ class Rexarm():
             if (speed_msg < 3.0/1023.0):
                 speed_msg = 3.0/1023.0
             if(update_now):
-                joint.set_speed(speed_msg)
+                joint.set_speed(speed_msg, num_tries=self.num_tries)
     
     def set_torque_limits(self, torques, update_now = True):
         for i,joint in enumerate(self.joints):
             self.max_torque[i] = torques[i]
             if(update_now):
-                joint.set_torque_limit(torques[i])
+                joint.set_torque_limit(torques[i], num_tries=self.num_tries)
 
     def send_commands(self):
         self.set_positions(self.position)
@@ -110,35 +112,35 @@ class Rexarm():
 
     def enable_torque(self):
         for joint in self.joints:
-            joint.enable_torque()
+            joint.enable_torque(num_tries=self.num_tries)
 
     def disable_torque(self):
         for joint in self.joints:
-            joint.disable_torque()
+            joint.disable_torque(num_tries=self.num_tries)
 
     def get_positions(self):
         for i,joint in enumerate(self.joints):
-            self.joint_angles_fb[i] = joint.get_position()
+            self.joint_angles_fb[i] = joint.get_position(num_tries=self.num_tries)
         return self.joint_angles_fb
 
     def get_speeds(self):
         for i,joint in enumerate(self.joints):
-            self.speed_fb[i] = joint.get_speed()
+            self.speed_fb[i] = joint.get_speed(num_tries=self.num_tries)
         return self.speed_fb
 
     def get_loads(self):
         for i,joint in enumerate(self.joints):
-            self.load_fb[i] = joint.get_load()
+            self.load_fb[i] = joint.get_load(num_tries=self.num_tries)
         return self.load_fb
 
     def get_temps(self):
         for i,joint in enumerate(self.joints):
-            self.temp_fb[i] = joint.get_temp()
+            self.temp_fb[i] = joint.get_temp(num_tries=self.num_tries)
         return self.temp_fb
 
     def get_moving_status(self):
         for i,joint in enumerate(self.joints):
-            self.move_fb[i] = joint.is_moving()
+            self.move_fb[i] = joint.is_moving(num_tries=self.num_tries)
         return self.move_fb
 
     def get_feedback(self):
@@ -157,9 +159,10 @@ class Rexarm():
                 break
 
     def clamp(self, joint_angles):
-        """TODO"""
-        pass
+        return np.clip(joint_angles, self.angle_limits[0],
+                       self.angle_limits[1])
 
     def get_wrist_pose(self):
         """TODO"""
-        return [0,0,0,0,0,0]
+        pos = FK_pox(self.joint_angles_fb)
+        return [pos[0],pos[1],0,0,0,0]

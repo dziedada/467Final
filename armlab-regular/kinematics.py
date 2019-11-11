@@ -27,15 +27,11 @@ def FK_pox(joint_angles):
     TODO: implement this function
 
     Calculate forward kinematics for rexarm
-    using product of exponential formulation
-
-    return a 4-tuple (x, y, z, phi) representing the pose of the 
-    desired link
-
-    note: phi is the euler angle about y in the base frame
+    
+    return [x, y], which is position of the end effector in the 2D world
 
     """
-    pass
+    return [0, 0]
 
 def IK(pose):
     """
