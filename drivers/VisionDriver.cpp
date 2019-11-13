@@ -80,7 +80,7 @@ void CameraWrapper::stop()
 
 void CameraWrapper::join()
 {
-    camera_thread_.join();
+    if (enabled_) camera_thread_.join();
 }
 
 void CameraWrapper::init_tasks()
@@ -194,9 +194,9 @@ int main(int argc, char**argv)
     };
     // Must set the sigHandlerImpl before setting signal handling
     signal(SIGINT, sigHandler);
-    signal(SIGABRT, sigHandler);
-    signal(SIGSEGV, sigHandler);
-    signal(SIGTERM, sigHandler);
+    // signal(SIGABRT, sigHandler);
+    // signal(SIGSEGV, sigHandler);
+    // signal(SIGTERM, sigHandler);
     // Wait until someone tries to terminate the program
     while (running)
     {
