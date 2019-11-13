@@ -99,6 +99,12 @@ class Gui(QMainWindow):
         TODO: add other motors here as needed with their correct address"""
         self.dxlbus = DXL_BUS(DEVICENAME, BAUDRATE)
         port_num = self.dxlbus.port()
+        """
+        467TODO:
+        Based on motors we are using, modify ports and definition of rexarm
+        
+        Assume only use shld, elbw, wrst for now
+        """
         base = DXL_MX(port_num, 1)
         shld = DXL_MX(port_num, 2)
         elbw = DXL_MX(port_num, 3)
