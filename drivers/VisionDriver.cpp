@@ -122,17 +122,7 @@ void CameraWrapper::broadcast_rgbd(const Mat rgb, const Mat depth, int64_t utime
 
     rgbd_image_t rgbd;
 
-    rgbd.rgb_image.width = rgb.cols;
-    rgbd.rgb_image.height = rgb.rows;
-    rgbd.rgb_image.size = rgbd.rgb_image.width * rgbd.rgb_image.height * 3;
-    const int8_t* raw_color = reinterpret_cast<const int8_t*>(rgb.data);
-    rgbd.rgb_image.raw_image.assign(raw_color, raw_color + rgbd.rgb_image.size);
-
-    rgbd.depth_image.width = depth.cols;
-    rgbd.depth_image.height = depth.rows;
-    rgbd.depth_image.size = rgbd.depth_image.width * rgbd.depth_image.height;
-    const int16_t* raw_depth = reinterpret_cast<const int16_t*>(depth.data);
-    rgbd.depth_image.raw_image.assign(raw_depth, raw_depth + rgbd.depth_image.size);
+    vision::rgbdToZcmType( rgb, depth, rgbd);
 
     rgbd.utime = utime;
 
@@ -172,7 +162,7 @@ int main(int argc, char**argv)
     }
     YAML::Node config = YAML::LoadFile(config_file_path);
     // Create zcm instance
-    shared_ptr<ZCM> zcm_ptr = shared_ptr<ZCM>(new ZCM("udp"));
+    shared_ptr<ZCM> zcm_ptr = shared_ptr<ZCM>(new ZCM("ipc"));
     // Create camera wrappers
     vector<shared_ptr<CameraWrapper>> wrappers;
     wrappers.reserve(4);
