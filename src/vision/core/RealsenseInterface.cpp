@@ -2,6 +2,7 @@
 #include <chrono>
 #include <iostream>
 #include <iostream>
+#include <thread>
 
 #include "vision/core/RealsenseInterface.hpp"
 
@@ -82,6 +83,7 @@ Mat RealsenseInterface::getDepth() const
 
 void RealsenseInterface::disableAutoExposure()
 {
+    std::this_thread::sleep_for(std::chrono::seconds(2));
     // Auto expose for two seconds
     for (int i = 0; i < 2 * fps_; i++) pipe_.wait_for_frames();
 

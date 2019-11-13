@@ -10,7 +10,7 @@
 # 845412110102
 
 forward:
-  enabled: false
+  enabled: true
   width: 640
   height: 480
   fps: 15                # 15, 30, or 60
@@ -41,7 +41,7 @@ forward:
   sim_translation: [0, 0, 0]
 
 downward:
-  enabled: false
+  enabled: true
   width: 640
   height: 480
   fps: 30                # 15, 30, or 60
