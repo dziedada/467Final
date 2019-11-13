@@ -12,8 +12,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS ON)
 
 # Add option to build modules
-option(BUILD_VISION "Build the vision module" ON)
-option(BUILD_TESTS "Build test cases" ON)
+option(BUILD_VISION "Build the vision system" ON)
+option(BUILD_TESTS "Build test cases" OFF)
 
 # Set all compiled libraries to be placed in software/lib
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
@@ -26,10 +26,10 @@ find_package(YAMLCPP REQUIRED)
 find_package(ZCM REQUIRED)
 find_package(libusb-1.0 REQUIRED)
 
-# Include generated zcm messages and mavlink headers
+# Include generated zcm messages and include folder
 include_directories(SYSTEM
     ${PROJECT_SOURCE_DIR}/generated
-    ${PROJECT_SOURCE_DIR}/thirdparty/mavlink/include
+    ${PROJECT_SOURCE_DIR}/include
     ${LIBUSB_1_INCLUDE_DIRS}
 )
 

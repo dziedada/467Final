@@ -22,23 +22,14 @@ include_directories(SYSTEM
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_library(CameraInterface SHARED
-    RealsenseInterface.cpp
-)
+add_executable(vision-driver VisionDriver.cpp)
 
-add_library(VisionUtils SHARED utilities.cpp)
-
-target_link_libraries(CameraInterface
+target_link_libraries(vision-driver
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
-    ${LIBREALSENSE2_LIBRARIES}
-    ${LIBUSB_1_LIBRARIES}
+    ${ZCM_LIBRARIES}
+    ${YAMLCPP_LIBRARY}
+    CameraInterface
+    VisionUtils
     m
-)
-
-# target_link_libraries(CameraInterface realsense2)
-
-target_link_libraries(VisionUtils
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
 )
