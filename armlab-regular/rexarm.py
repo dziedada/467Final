@@ -23,7 +23,10 @@ class Rexarm():
         self.gripper_closed_pos = np.deg2rad(30.0)
         self.gripper_state = True
         self.estop = False
-        """TODO: Find the physical angle limits of the Rexarm. Remember to keep track of this if you include more motors"""
+        """
+        467TODO: 
+        Find the physical angle limits of the Rexarm. Remember to keep track of this if you include more motors
+        """
         angle_max = 95.0
         angle_min = -95.0
         self.angle_limits = np.array(
@@ -165,4 +168,4 @@ class Rexarm():
     def get_wrist_pose(self):
         """TODO"""
         pos = FK_pox(self.joint_angles_fb)
-        return [pos[0],pos[1],0,0,0,0]
+        return [pos[0],pos[1],0,0,0,pos[2]]
