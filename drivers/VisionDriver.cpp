@@ -8,6 +8,7 @@
 #include <yaml-cpp/yaml.h>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -38,6 +39,86 @@ using cv::Mat;
 
 using vision::CameraPoseData;
 using vision::RealsenseInterface;
+
+// Start MeasureFramerate Section **********************************
+
+class MeasureFramerate
+{
+public:
+    void add_sample(int64_t sample);
+private:
+    static void compute_statistics(MeasureFramerate* self);
+    static double compute_average_disparity(const vector<int64_t>& disparities, size_t start,
+        size_t end);
+    vector<int64_t> timestamps_;
+    mutex mtx_;
+};
+
+void MeasureFramerate::add_sample(int64_t sample)
+{
+    unique_lock<mutex> lck(mtx_);
+    timestamps_.push_back(sample);
+    // Compute statistics if enough samples have been collected
+    if (timestamps_.size() >= 600) thread(compute_statistics, this).detach();
+}
+
+void MeasureFramerate::compute_statistics(MeasureFramerate* self)
+{
+    // Make a local copy of the timestamps
+    unique_lock<mutex> lck(self->mtx_);
+    vector<int64_t> timestamps = self->timestamps_;
+    lck.unlock();
+    // Sort the timestamps
+    std::sort(timestamps.begin(), timestamps.end());
+    // Compute the disparity between timestamps
+    vector<int64_t> disparities;
+    disparities.reserve(timestamps.size());
+    for (size_t i = 1; i < timestamps.size(); ++i)
+    {
+        disparities.push_back(timestamps[i] - timestamps[i - 1]);
+    }
+    // Sort the timestamp disparities
+    std::sort(disparities.begin(), disparities.end());
+    // Compute the average disparity for the largest 1/2 of the disparities
+    double largest_half = compute_average_disparity(disparities, disparities.size() / 2, 
+        disparities.size());
+    // Compute the average disparity for the smallest 1/2 of the disparities
+    double smallest_half = compute_average_disparity(disparities, 0, 
+        disparities.size() / 2);
+    // Compute the average disparity for each 10% of the disparities
+    const double step = 0.1; // 10%
+    vector<double> percentile_averages;
+    percentile_averages.reserve(10);
+    for (size_t i = 0; i < 10; ++i)
+    {
+        percentile_averages.push_back(compute_average_disparity(
+            disparities, static_cast<size_t>(step * i * disparities.size()),
+            static_cast<size_t>((0.1 * step * i + 0.1) * disparities.size())));
+    }
+    // Print the results of the analysis
+    cout << "Average Disparity of Largest Half: " << largest_half << endl;
+    cout << "Average Disparity of Smallest Half: " << smallest_half << endl;
+    for (size_t i = 0; i < percentile_averages.size(); ++i)
+    {
+        size_t lower_percent = (i * 10);
+        size_t uppper_percent = lower_percent + 10;
+        cout << lower_percent << " to " << uppper_percent << ": " << percentile_averages[i] << endl;
+    }
+}
+
+double MeasureFramerate::compute_average_disparity(const vector<int64_t>& disparities, 
+    size_t start, size_t end)
+{
+    int64_t disparity_accumulator = 0;
+    for (size_t i = start; i < end; ++i)
+    {
+        disparity_accumulator += disparities[i];
+    }
+    double average_second_half_disparity = static_cast<double>(disparity_accumulator) / 
+        static_cast<double>(end - start);
+}
+
+// End MeasureFramerate Section *************************************
 
 // Start CameraWrapper Section **************************************
 
