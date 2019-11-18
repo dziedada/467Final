@@ -8,8 +8,10 @@ TODO: Here is where you will write all of your kinematics functions
 There are some functions to start with, you may need to implement a few more
 
 """
-forearm_len = 0.15
-upperarm_len = 0.15
+forearm_len = 0.10
+upperarm_len = 0.10
+
+R2D = 180.0/3.141592
 
 def FK_dh(joint_angles, link):
     """
@@ -30,12 +32,12 @@ def calc_A_FK(theta, len):
     467TODO:
     theta may be different from this assumption
     """
-
+    print(len)
     A = np.empty((3, 3))
     s = math.sin(theta)
     c = math.cos(theta)
 
-    R = [[len * c, len * s], [-len * s, len * c]]
+    R = [[c, s], [-s, c]]
     T = [len * s, len * c]
 
     A[:2, :2] = R
@@ -63,19 +65,25 @@ def FK_pox(joint_angles):
     lens = [0.0, upperarm_len, forearm_len]
 
     pose = np.array([0.0, 0.0, 1.0])
+    print(joint_angles)
     for i in range(2, 0, -1):
-        transform = calc_A_FK(joint_angles[i], lens[i])
+        if i == 1:
+            transform = calc_A_FK(0 - joint_angles[i], lens[i])
+        elif i == 2:
+            transform = calc_A_FK(90.0 - joint_angles[i], lens[i])
 
         pose = transform @ pose
 
     pose /= pose[2]
 
+    x = pose[0]
+    y = pose[1]
     if x == 0.0:
         pose_angle = 0.0
     else:
         pose_angle = np.arctan(y / x) * R2D
-    phi = pose_angle + joint_angles[3]
-
+    # phi = pose_angle + joint_angles[3]
+    phi = pose_angle
     return [pose[0], pose[1], phi]
 
 def check_valid(pose):

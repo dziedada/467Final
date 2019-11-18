@@ -47,14 +47,26 @@ class Rexarm():
         self.temp_fb = [0.0] * self.num_joints         # Celsius
         self.move_fb = [0] *  self.num_joints
 
-        self.num_tries = 512
+        self.num_tries = 51200
 
     def initialize(self):
+        id = -1
         for joint in self.joints:
+            id += 1
             joint.enable_torque(num_tries=self.num_tries)
-            joint.set_position(0.0, num_tries=self.num_tries)
-            joint.set_torque_limit(0.5, num_tries=self.num_tries)
-            joint.set_speed(0.25, num_tries=self.num_tries)
+            joint.set_torque_limit(1.0, num_tries=self.num_tries)
+            joint.set_speed(1.0, num_tries=self.num_tries)
+            if id == 0:
+                joint.set_position(-90.0, num_tries=self.num_tries)
+                self.position[id] = -90.0
+            elif id == 1:
+                joint.set_position(0.0, num_tries=self.num_tries)
+                self.position[id] = 0.0
+            elif id == 2:
+                joint.set_position(90.0, num_tries=self.num_tries)
+                self.position[id] = 90.0
+            print(id, self.position[id])
+            
         if(self.gripper != 0):
             self.gripper.set_torque_limit(1.0, num_tries=self.num_tries)
             self.gripper.set_speed(0.8, num_tries=self.num_tries)
@@ -162,8 +174,8 @@ class Rexarm():
                 break
 
     def clamp(self, joint_angles):
-        return np.clip(joint_angles, self.angle_limits[0],
-                       self.angle_limits[1])
+        return np.clip(joint_angles, self.angle_limits[0][:len(joint_angles)],
+                       self.angle_limits[1][:len(joint_angles)])
 
     def get_wrist_pose(self):
         """TODO"""

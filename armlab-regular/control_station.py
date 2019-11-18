@@ -108,12 +108,13 @@ class Gui(QMainWindow):
         base = DXL_MX(port_num, 1)
         shld = DXL_MX(port_num, 2)
         elbw = DXL_MX(port_num, 3)
-        wrst = DXL_AX(port_num, 4)
-        wrst2 = DXL_AX(port_num, 5)
+        #wrst = DXL_AX(port_num, 1)
+        #wrst2 = DXL_AX(port_num, 1)
 
         """Objects Using Other Classes"""
         self.kinect = None #Kinect()
-        self.rexarm = Rexarm((base,shld,elbw,wrst,wrst2),0)
+        #self.rexarm = Rexarm((base,shld,elbw,wrst,wrst2),0)
+        self.rexarm = Rexarm((base,shld,elbw),0)
         self.tp = TrajectoryPlanner(self.rexarm)
         self.sm = StateMachine(self.rexarm, self.tp, self.kinect)
     
@@ -178,11 +179,17 @@ class Gui(QMainWindow):
     @pyqtSlot(list)
     def updateJointReadout(self, joints):
         self.ui.rdoutBaseJC.setText(str("%+.2f" % (joints[0]*R2D)))
-        self.ui.rdoutShoulderJC.setText(str("%+.2f" % ((joints[1]*R2D)+90.0)))
+        self.ui.rdoutShoulderJC.setText(str("%+.2f" % ((joints[1]*R2D))))
         self.ui.rdoutElbowJC.setText(str("%+.2f" % (joints[2]*R2D)))
-        self.ui.rdoutWristJC.setText(str("%+.2f" % (joints[3]*R2D)))
-        self.ui.rdoutWrist2JC.setText(str("%+.2f" % (joints[4]*R2D)))
+        if(len(joints)>3):
+            self.ui.rdoutWristJC.setText(str("%+.2f" % (joints[3]*R2D)))
+        else:
+            self.ui.rdoutWristJC.setText(str("N.A."))
 
+        if (len(joints) > 4):    
+            self.ui.rdoutWrist2JC.setText(str("%+.2f" % (joints[4]*R2D)))
+        else:
+            self.ui.rdoutWrist2JC.setText(str("N.A."))
         if(len(joints)>5):
             self.ui.rdoutWrist3JC.setText(str("%+.2f" % (joints[5]*R2D)))
 
