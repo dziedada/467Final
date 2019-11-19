@@ -1,5 +1,6 @@
 import time
 import numpy as np
+from kinematics import *
 
 """
 TODO: Add states and state functions to this class
@@ -13,6 +14,7 @@ class StateMachine():
         self.status_message = "State: Idle"
         self.current_state = "idle"
         self.next_state = "idle"
+        self.test = 0
 
 
     def set_next_state(self, state):
@@ -60,6 +62,11 @@ class StateMachine():
     def idle(self):
         self.status_message = "State: Idle - Waiting for input"
         self.current_state = "idle"
+        self.test += 1
+        if self.test == 20:
+            angles = IK((0.08, 0.13, 0))
+            print(angles)
+            self.rexarm.move_to_target_angles(angles)
         self.rexarm.get_feedback()
 
     def estop(self):
