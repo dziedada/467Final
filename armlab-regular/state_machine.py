@@ -136,6 +136,11 @@ class StateMachine():
     def idle(self):
         self.status_message = "State: Idle - Waiting for input"
         self.current_state = "idle"
+        self.test += 1
+        if self.test == 20:
+            angles = IK((0.08, 0.13, 0))
+            print(angles)
+            self.rexarm.move_to_target_angles(angles)
         self.rexarm.get_feedback()
 
     def estop(self):
