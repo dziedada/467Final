@@ -49,23 +49,14 @@ class Rexarm():
 
         self.num_tries = 51200
 
+    def move_to_target_angles(self, angles):
+        for i in range(len(angles)):
+            self.position[i] = angles[i]
+        self.send_commands()
+
     def initialize(self):
-        id = -1
-        for joint in self.joints:
-            id += 1
-            joint.enable_torque(num_tries=self.num_tries)
-            joint.set_torque_limit(1.0, num_tries=self.num_tries)
-            joint.set_speed(1.0, num_tries=self.num_tries)
-            if id == 0:
-                joint.set_position(-90.0, num_tries=self.num_tries)
-                self.position[id] = -90.0
-            elif id == 1:
-                joint.set_position(0.0, num_tries=self.num_tries)
-                self.position[id] = 0.0
-            elif id == 2:
-                joint.set_position(90.0, num_tries=self.num_tries)
-                self.position[id] = 90.0
-            print(id, self.position[id])
+        self.move_to_target_angles((-90.0 * D2R, 0.0 * D2R, 90.0 * D2R))
+        self.send_commands()
             
         if(self.gripper != 0):
             self.gripper.set_torque_limit(1.0, num_tries=self.num_tries)

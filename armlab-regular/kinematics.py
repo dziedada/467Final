@@ -28,11 +28,7 @@ def FK_dh(joint_angles, link):
     pass
 
 def calc_A_FK(theta, len):
-    """
-    467TODO:
-    theta may be different from this assumption
-    """
-    print(len)
+    # print(len)
     A = np.empty((3, 3))
     s = math.sin(theta)
     c = math.cos(theta)
@@ -65,17 +61,17 @@ def FK_pox(joint_angles):
     lens = [0.0, upperarm_len, forearm_len]
 
     pose = np.array([0.0, 0.0, 1.0])
-    print(joint_angles)
+    #print(joint_angles)
     for i in range(2, 0, -1):
         if i == 1:
             transform = calc_A_FK(0 - joint_angles[i], lens[i])
         elif i == 2:
-            transform = calc_A_FK(90.0 - joint_angles[i], lens[i])
+            transform = calc_A_FK(90.0 / R2D - joint_angles[i], lens[i])
 
         pose = transform @ pose
 
     pose /= pose[2]
-
+    # print(joint_angles)
     x = pose[0]
     y = pose[1]
     if x == 0.0:
@@ -87,10 +83,18 @@ def FK_pox(joint_angles):
     return [pose[0], pose[1], phi]
 
 def check_valid(pose):
+    """
+    467TODO
+
+    currently only angle limits are [-90, 90]
+    """
     if pose[1] < 0:
         return False
-    if pose[0] ** 2 + pose[1] ** 2 > forearm_len + upperarm_len:
+    len = math.sqrt(pose[0] ** 2 + pose[1] ** 2)
+    if len > forearm_len + upperarm_len or len < upperarm_len:
+        print("Invalid Pose: ", pose)
         return False
+
     return True
 
 def IK(pose):
@@ -102,15 +106,25 @@ def IK(pose):
     return the required joint angles
 
     Assume pose = [x, y, phi] as in FK
-    return angles for [shld, elbw, wrst]
+    return angles for [base, shld, elbw]
 
     """
 
     # check if the target pose is valid
     if not check_valid(pose):
         return None
+    x = pose[0]
+    y = pose[1]
+    target_len = math.sqrt(x ** 2 + y ** 2)
     
-    return [0, 0, 0]
+    A = np.arccos((upperarm_len ** 2 + target_len ** 2 - forearm_len ** 2) / (2 * upperarm_len * target_len))
+    theta0 = np.arctan(abs(x / y)) + A
+    B = np.arccos((upperarm_len ** 2 + forearm_len ** 2 - target_len ** 2) / (2 * upperarm_len * forearm_len))    
+    theta1 = B - math.pi / 2
+    if x < 0:
+        theta0 = -theta0
+        theta1 = -theta1
+    return [-math.pi / 2, 0.0 - theta0, math.pi - theta1]
 
 
 def get_euler_angles_from_T(T):
