@@ -78,6 +78,16 @@ class DisplayThread(QThread):
             self.updateJointReadout.emit(self.rexarm.joint_angles_fb)
             self.updateEndEffectorReadout.emit(self.rexarm.get_wrist_pose())    
             time.sleep(0.1)
+
+class ListenningThread(QThread):   
+    def __init__(self, state_machine, parent=None):
+        QThread.__init__(self, parent=parent) 
+        self.sm=state_machine
+
+    def run(self):
+        while True:    
+            self.sm.run()
+            time.sleep(0.05)
     
 """GUI Class"""
 class Gui(QMainWindow):
@@ -108,7 +118,7 @@ class Gui(QMainWindow):
         base = DXL_MX(port_num, 1)
         shld = DXL_MX(port_num, 2)
         elbw = DXL_MX(port_num, 3)
-        #wrst = DXL_AX(port_num, 1)
+        #wrst = DXL_AX(port_num, 4)
         #wrst2 = DXL_AX(port_num, 1)
 
         """Objects Using Other Classes"""

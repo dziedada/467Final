@@ -1,7 +1,11 @@
 import time
 import numpy as np
 from kinematics import *
-
+import lcm
+import os
+import threading
+os.sys.path.append('lcmtypes/')
+from lcmtypes import ball_t
 """
 TODO: Add states and state functions to this class
         to implement all of the required logic for the armlab
@@ -15,7 +19,20 @@ class StateMachine():
         self.current_state = "idle"
         self.next_state = "idle"
         self.test = 0
+        self.togo = []
+        self.togo_lock = threading.Lock()
+        self.lc = lcm.LCM()
+        lcmBallPoseSub = self.lc.subscribe("BALL_POSE",
+                                           self.ball_pose_handler)
 
+    def ball_pose_handler(self, channel, data):
+        msg = ball_t.decode(data)
+        self.togo_lock.acquire()
+        self.togo.append(msg.position)
+        if len(self.togo) == 1:
+            self.next_state = "move"
+        self.togo_lock.release()
+        print(msg.position)
 
     def set_next_state(self, state):
         self.next_state = state
@@ -40,6 +57,18 @@ class StateMachine():
                 self.estop()
             if(self.next_state == "calibrate"):
                 self.calibrate()
+            if(self.next_state == "move"):
+                self.move()
+
+        if(self.current_state == "move"):
+            if(self.next_state == "manual"):
+                self.manual()
+            if(self.next_state == "idle"):
+                self.idle()
+            if(self.next_state == "estop"):
+                self.estop()
+            if(self.next_state == "calibrate"):
+                self.calibrate()
                 
         if(self.current_state == "estop"):
             self.next_state = "estop"
@@ -48,10 +77,13 @@ class StateMachine():
         if(self.current_state == "calibrate"):
             if(self.next_state == "idle"):
                 self.idle()
-               
+        
+        self.listen_to_command()     
 
     """Functions run for each state"""
 
+    def listen_to_command(self):
+        self.lc.handle_timeout(10)
 
     def manual(self):
         self.status_message = "State: Manual - Use sliders to control arm"
@@ -59,14 +91,49 @@ class StateMachine():
         self.rexarm.send_commands()
         self.rexarm.get_feedback()
 
+    def move(self):
+        self.status_message = "State: Move - move to a target point"
+        self.current_state = "move"
+        self.togo_lock.acquire()
+        target = self.togo.pop(0)
+        angles = IK((target[0], target[1], 0))
+        print(angles)
+        self.rexarm.move_to_target_angles(angles)
+        if not len(self.togo):
+            self.next_state = "idle"
+        self.togo_lock.release()
     def idle(self):
         self.status_message = "State: Idle - Waiting for input"
         self.current_state = "idle"
         self.test += 1
-        if self.test == 20:
-            angles = IK((0.08, 0.13, 0))
-            print(angles)
-            self.rexarm.move_to_target_angles(angles)
+        # if self.test == 20:
+        #     angles = IK((0.08, 0.1, 0))
+        #     print(angles)
+        #     self.rexarm.move_to_target_angles(angles)
+        # if self.test == 25:
+        #     angles = IK((0.08, 0.12, 0))
+        #     print(angles)
+        #     self.rexarm.move_to_target_angles(angles)
+        # if self.test == 26:
+        #     angles = IK((0.08, 0.13, 0))
+        #     print(angles)
+        #     self.rexarm.move_to_target_angles(angles)
+        # if self.test == 27:
+        #     angles = IK((0.08, 0.14, 0))
+        #     print(angles)
+        #     self.rexarm.move_to_target_angles(angles)
+        # if self.test == 28:
+        #     angles = IK((0.08, 0.15, 0))
+        #     print(angles)
+        #     self.rexarm.move_to_target_angles(angles)
+        # if self.test == 29:
+        #     angles = IK((0.08, 0.16, 0))
+        #     print(angles)
+        #     self.rexarm.move_to_target_angles(angles)
+        # if self.test == 30:
+        #     angles = IK((0.08, 0.17, 0))
+        #     print(angles)
+        #     self.rexarm.move_to_target_angles(angles)
         self.rexarm.get_feedback()
 
     def estop(self):
