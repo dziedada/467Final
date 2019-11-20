@@ -14,4 +14,4 @@ if [ -d "${SOFTWARE_DIR}/generated/common" ]; then
     rm -r ${SOFTWARE_DIR}/generated/common
 fi
 
-zcm-gen --cpp --cpp-hpath ${GENERATED_DIR} ${ZCM_TYPES_DIR}/*.lcm
+lcm-gen --cpp --cpp-hpath ${GENERATED_DIR} ${ZCM_TYPES_DIR}/*.lcm
