@@ -32,6 +32,8 @@ using std::unique_lock;
 using std::condition_variable;
 using std::atomic_bool;
 using std::function;
+using std::this_thread::sleep_for;
+using std::chrono::milliseconds;
 
 using zcm::ZCM;
 
@@ -93,7 +95,7 @@ void MeasureFramerate::compute_statistics(MeasureFramerate* self)
     {
         percentile_averages.push_back(compute_average_disparity(
             disparities, static_cast<size_t>(step * i * disparities.size()),
-            static_cast<size_t>((0.1 * step * i + 0.1) * disparities.size())));
+            static_cast<size_t>((step * i + 0.1) * disparities.size())));
     }
     // Print the results of the analysis
     cout << "Average Disparity of Largest Half: " << largest_half << endl;
@@ -103,6 +105,15 @@ void MeasureFramerate::compute_statistics(MeasureFramerate* self)
         size_t lower_percent = (i * 10);
         size_t uppper_percent = lower_percent + 10;
         cout << lower_percent << " to " << uppper_percent << ": " << percentile_averages[i] << endl;
+    }
+    cout << "Average FPS equivalent of Largest Half: " << 1000000.0 / largest_half << endl;
+    cout << "Average FPS equivalent of Smallest Half: " << 1000000.0 / smallest_half << endl;
+    for (size_t i = 0; i < percentile_averages.size(); ++i)
+    {
+        size_t lower_percent = (i * 10);
+        size_t uppper_percent = lower_percent + 10;
+        cout << lower_percent << " to " << uppper_percent << ": " 
+            << 1000000.0 / percentile_averages[i] << endl;
     }
 }
 
@@ -114,8 +125,9 @@ double MeasureFramerate::compute_average_disparity(const vector<int64_t>& dispar
     {
         disparity_accumulator += disparities[i];
     }
-    double average_second_half_disparity = static_cast<double>(disparity_accumulator) / 
+    double average_disparity = static_cast<double>(disparity_accumulator) / 
         static_cast<double>(end - start);
+    return average_disparity;
 }
 
 // End MeasureFramerate Section *************************************
@@ -132,6 +144,7 @@ public:
     void init_tasks(); // Set starting task metadata
     static void run_camera(CameraWrapper* self);
     static void broadcast_rgbd(const Mat rgb, const Mat depth, int64_t utime, CameraWrapper* self);
+    static void add_framerate_sample(int64_t utime, CameraWrapper* self);
 private:
     RealsenseInterface interface_;
     shared_ptr<ZCM> zcm_ptr_;
@@ -140,6 +153,8 @@ private:
     thread camera_thread_;
     // Task metadata section (managed)
     atomic_bool broadcast_rgbd_running_;
+    // End Task metadata section
+    static MeasureFramerate measure_framerate_;
 };
 
 CameraWrapper::CameraWrapper(const YAML::Node& config, shared_ptr<ZCM> zcm_ptr) :
@@ -186,6 +201,7 @@ void CameraWrapper::run_camera(CameraWrapper* self)
         int64_t utime = self->interface_.getUTime();
         // Start up task threads (task threads handle lifetime on their own using task metadata)
         thread(CameraWrapper::broadcast_rgbd, rgb, depth, utime, self).detach();
+        thread(CameraWrapper::add_framerate_sample, utime, self).detach();
     }
 }
 
@@ -213,6 +229,14 @@ void CameraWrapper::broadcast_rgbd(const Mat rgb, const Mat depth, int64_t utime
 
     self->broadcast_rgbd_running_ = false;
 }
+
+void CameraWrapper::add_framerate_sample(int64_t utime, CameraWrapper* self)
+{
+    CameraWrapper::measure_framerate_.add_sample(utime);
+}
+
+MeasureFramerate CameraWrapper::measure_framerate_;
+
 // End task threads of CameraWrapper implementations
 // End CameraWrapper Section **************************************
 
@@ -248,9 +272,15 @@ int main(int argc, char**argv)
     vector<shared_ptr<CameraWrapper>> wrappers;
     wrappers.reserve(4);
     wrappers.emplace_back(new CameraWrapper(config["forward"], zcm_ptr));
+    sleep_for(milliseconds(8));
     wrappers.emplace_back(new CameraWrapper(config["downward"], zcm_ptr));
+    sleep_for(milliseconds(8));
+    wrappers.emplace_back(new CameraWrapper(config["other-forward"], zcm_ptr));
     // Start all the camera wrappers
-    for (auto& wrapper : wrappers) wrapper->start();
+    for (auto& wrapper : wrappers)
+    {
+        wrapper->start();
+    }
     // Set up sighandler
     atomic_bool running;
     running = true;
