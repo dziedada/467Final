@@ -137,10 +137,34 @@ class StateMachine():
         self.status_message = "State: Idle - Waiting for input"
         self.current_state = "idle"
         self.test += 1
-        if self.test == 20:
-            angles = IK((0.08, 0.13, 0))
-            print(angles)
-            self.rexarm.move_to_target_angles(angles)
+        # if self.test == 20:
+        #     angles = IK((0.08, 0.1, 0))
+        #     print(angles)
+        #     self.rexarm.move_to_target_angles(angles)
+        # if self.test == 25:
+        #     angles = IK((0.08, 0.12, 0))
+        #     print(angles)
+        #     self.rexarm.move_to_target_angles(angles)
+        # if self.test == 26:
+        #     angles = IK((0.08, 0.13, 0))
+        #     print(angles)
+        #     self.rexarm.move_to_target_angles(angles)
+        # if self.test == 27:
+        #     angles = IK((0.08, 0.14, 0))
+        #     print(angles)
+        #     self.rexarm.move_to_target_angles(angles)
+        # if self.test == 28:
+        #     angles = IK((0.08, 0.15, 0))
+        #     print(angles)
+        #     self.rexarm.move_to_target_angles(angles)
+        # if self.test == 29:
+        #     angles = IK((0.08, 0.16, 0))
+        #     print(angles)
+        #     self.rexarm.move_to_target_angles(angles)
+        # if self.test == 30:
+        #     angles = IK((0.08, 0.17, 0))
+        #     print(angles)
+        #     self.rexarm.move_to_target_angles(angles)
         self.rexarm.get_feedback()
 
     def estop(self):
