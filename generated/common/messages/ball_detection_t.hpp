@@ -6,19 +6,23 @@
 
 #include <lcm/lcm_coretypes.h>
 
-#ifndef __point_t_hpp__
-#define __point_t_hpp__
+#ifndef __ball_detection_t_hpp__
+#define __ball_detection_t_hpp__
 
 
 
-class point_t
+/**
+ * LCM type for ball detection
+ *
+ */
+class ball_detection_t
 {
     public:
-        float      x;
+        int8_t     color;
 
-        float      y;
+        int64_t    utime;
 
-        float      z;
+        double     position[2];
 
     public:
         /**
@@ -56,7 +60,7 @@ class point_t
         inline static int64_t getHash();
 
         /**
-         * Returns "point_t"
+         * Returns "ball_detection_t"
          */
         inline static const char* getTypeName();
 
@@ -67,7 +71,7 @@ class point_t
         inline static int64_t _computeHash(const __lcm_hash_ptr *p);
 };
 
-int point_t::encode(void *buf, int offset, int maxlen) const
+int ball_detection_t::encode(void *buf, int offset, int maxlen) const
 {
     int pos = 0, tlen;
     int64_t hash = getHash();
@@ -81,7 +85,7 @@ int point_t::encode(void *buf, int offset, int maxlen) const
     return pos;
 }
 
-int point_t::decode(const void *buf, int offset, int maxlen)
+int ball_detection_t::decode(const void *buf, int offset, int maxlen)
 {
     int pos = 0, thislen;
 
@@ -96,66 +100,66 @@ int point_t::decode(const void *buf, int offset, int maxlen)
     return pos;
 }
 
-int point_t::getEncodedSize() const
+int ball_detection_t::getEncodedSize() const
 {
     return 8 + _getEncodedSizeNoHash();
 }
 
-int64_t point_t::getHash()
+int64_t ball_detection_t::getHash()
 {
     static int64_t hash = _computeHash(NULL);
     return hash;
 }
 
-const char* point_t::getTypeName()
+const char* ball_detection_t::getTypeName()
 {
-    return "point_t";
+    return "ball_detection_t";
 }
 
-int point_t::_encodeNoHash(void *buf, int offset, int maxlen) const
+int ball_detection_t::_encodeNoHash(void *buf, int offset, int maxlen) const
 {
     int pos = 0, tlen;
 
-    tlen = __float_encode_array(buf, offset + pos, maxlen - pos, &this->x, 1);
+    tlen = __int8_t_encode_array(buf, offset + pos, maxlen - pos, &this->color, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
-    tlen = __float_encode_array(buf, offset + pos, maxlen - pos, &this->y, 1);
+    tlen = __int64_t_encode_array(buf, offset + pos, maxlen - pos, &this->utime, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
-    tlen = __float_encode_array(buf, offset + pos, maxlen - pos, &this->z, 1);
+    tlen = __double_encode_array(buf, offset + pos, maxlen - pos, &this->position[0], 2);
     if(tlen < 0) return tlen; else pos += tlen;
 
     return pos;
 }
 
-int point_t::_decodeNoHash(const void *buf, int offset, int maxlen)
+int ball_detection_t::_decodeNoHash(const void *buf, int offset, int maxlen)
 {
     int pos = 0, tlen;
 
-    tlen = __float_decode_array(buf, offset + pos, maxlen - pos, &this->x, 1);
+    tlen = __int8_t_decode_array(buf, offset + pos, maxlen - pos, &this->color, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
-    tlen = __float_decode_array(buf, offset + pos, maxlen - pos, &this->y, 1);
+    tlen = __int64_t_decode_array(buf, offset + pos, maxlen - pos, &this->utime, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
-    tlen = __float_decode_array(buf, offset + pos, maxlen - pos, &this->z, 1);
+    tlen = __double_decode_array(buf, offset + pos, maxlen - pos, &this->position[0], 2);
     if(tlen < 0) return tlen; else pos += tlen;
 
     return pos;
 }
 
-int point_t::_getEncodedSizeNoHash() const
+int ball_detection_t::_getEncodedSizeNoHash() const
 {
     int enc_size = 0;
-    enc_size += __float_encoded_array_size(NULL, 1);
-    enc_size += __float_encoded_array_size(NULL, 1);
-    enc_size += __float_encoded_array_size(NULL, 1);
+    enc_size += __int8_t_encoded_array_size(NULL, 1);
+    enc_size += __int64_t_encoded_array_size(NULL, 1);
+    enc_size += __double_encoded_array_size(NULL, 2);
     return enc_size;
 }
 
-int64_t point_t::_computeHash(const __lcm_hash_ptr *)
+int64_t ball_detection_t::_computeHash(const __lcm_hash_ptr *)
 {
-    int64_t hash = 0x2a14f112c253ac0cLL;
+    int64_t hash = 0x8c197938dee35d1eLL;
     return (hash<<1) + ((hash>>63)&1);
 }
 
