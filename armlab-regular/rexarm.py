@@ -2,6 +2,7 @@
 import numpy as np
 from kinematics import *
 import time
+import math
 
 """ 
 TODO:
@@ -27,8 +28,8 @@ class Rexarm():
         467TODO: 
         Find the physical angle limits of the Rexarm. Remember to keep track of this if you include more motors
         """
-        angle_max = 95.0
-        angle_min = -95.0
+        angle_max = 110.0
+        angle_min = -110.0
         self.angle_limits = np.array(
             [[angle_min, angle_min, angle_min, angle_min, angle_min],
              [angle_max, angle_max, angle_max, angle_max, angle_max]],
@@ -52,6 +53,7 @@ class Rexarm():
     def move_to_target_angles(self, angles):
         for i in range(len(angles)):
             self.position[i] = angles[i]
+            self.max_torque[i] = 1.0
         self.send_commands()
 
     def initialize(self):
@@ -165,8 +167,17 @@ class Rexarm():
                 break
 
     def clamp(self, joint_angles):
-        return np.clip(joint_angles, self.angle_limits[0][:len(joint_angles)],
+        clipped_angle = np.clip(joint_angles, self.angle_limits[0][:len(joint_angles)],
                        self.angle_limits[1][:len(joint_angles)])
+        # for elbow, should -90 then do clipping
+        elbow = joint_angles[2] - math.pi / 2
+        if elbow < -math.pi:
+            elbow += 2 * math.pi
+        clipped_angle[2] = np.clip([elbow], self.angle_limits[0][2], self.angle_limits[1][2])[0] + math.pi / 2
+        if clipped_angle[2] > math.pi:
+            clipped_angle[2] -= 2 * math.pi
+        return clipped_angle    
+
 
     def get_wrist_pose(self):
         """TODO"""

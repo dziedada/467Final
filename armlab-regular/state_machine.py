@@ -98,7 +98,8 @@ class StateMachine():
         target = self.togo.pop(0)
         angles = IK((target[0], target[1], 0))
         print(angles)
-        self.rexarm.move_to_target_angles(angles)
+        if angles:
+            self.rexarm.move_to_target_angles(angles)
         if not len(self.togo):
             self.next_state = "idle"
         self.togo_lock.release()

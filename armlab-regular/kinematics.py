@@ -12,6 +12,7 @@ forearm_len = 0.10
 upperarm_len = 0.10
 
 R2D = 180.0/3.141592
+D2R = 3.141592/180.0
 
 def FK_dh(joint_angles, link):
     """
@@ -66,7 +67,7 @@ def FK_pox(joint_angles):
         if i == 1:
             transform = calc_A_FK(0 - joint_angles[i], lens[i])
         elif i == 2:
-            transform = calc_A_FK(90.0 / R2D - joint_angles[i], lens[i])
+            transform = calc_A_FK(math.pi / 2 - joint_angles[i], lens[i])
 
         pose = transform @ pose
 
@@ -92,7 +93,7 @@ def check_valid(pose):
         return False
     len = math.sqrt(pose[0] ** 2 + pose[1] ** 2)
     if len > forearm_len + upperarm_len or len < upperarm_len:
-        print("Invalid Pose: ", pose)
+        print("Cannot reach: ", pose)
         return False
 
     return True
@@ -118,13 +119,24 @@ def IK(pose):
     target_len = math.sqrt(x ** 2 + y ** 2)
     
     A = np.arccos((upperarm_len ** 2 + target_len ** 2 - forearm_len ** 2) / (2 * upperarm_len * target_len))
-    theta0 = np.arctan(abs(x / y)) + A
+    theta0 = - (np.arctan(abs(x / y)) + A)
     B = np.arccos((upperarm_len ** 2 + forearm_len ** 2 - target_len ** 2) / (2 * upperarm_len * forearm_len))    
-    theta1 = B - math.pi / 2
+    theta1 = math.pi - B
     if x < 0:
         theta0 = -theta0
         theta1 = -theta1
-    return [-math.pi / 2, 0.0 - theta0, math.pi - theta1]
+    theta1 += math.pi / 2
+    if theta1 > math.pi:
+        theta1 -= 2 * math.pi
+    # print(A * R2D, B * R2D, theta0 * R2D, theta1 * R2D)    
+    # check valid:
+    if theta0 > 110 * D2R or theta0 < -110 * D2R:
+        print(pose, " is out of upperarm's reach")
+        return None
+    if theta1 < -20 * D2R and theta1 > -160 * D2R:
+        print(pose, " is out of forearm's reach")
+        return None
+    return [-math.pi / 2, theta0, theta1]
 
 
 def get_euler_angles_from_T(T):
