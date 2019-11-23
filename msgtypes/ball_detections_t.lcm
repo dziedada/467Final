@@ -5,4 +5,5 @@ struct ball_detections_t
 {
     int32_t num_detections;
     ball_detection_t detections[num_detections];
+    int64_t utime;
 }

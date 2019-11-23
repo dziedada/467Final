@@ -1,7 +1,10 @@
 #include <vision/core/utilities.hpp>
 #include <vision/core/RealsenseInterface.hpp>
+#include <vision/core/BallDetector.hpp>
+#include <common/message_channels.hpp>
 #include <common/messages/depth_image_t.hpp>
 #include <common/messages/rgb_image_t.hpp>
+#include <common/messages/ball_detections_t.hpp>
 
 #include <opencv2/core.hpp>
 #include <zcm/zcm-cpp.hpp>
@@ -34,10 +37,15 @@ using std::atomic_bool;
 using std::function;
 using std::this_thread::sleep_for;
 using std::chrono::milliseconds;
+using std::chrono::duration_cast;
+using std::chrono::system_clock;
 
 using zcm::ZCM;
 
 using cv::Mat;
+
+using pcl::PointCloud;
+using pcl::PointXYZ;
 
 using vision::CameraPoseData;
 using vision::RealsenseInterface;
@@ -145,14 +153,18 @@ public:
     static void run_camera(CameraWrapper* self);
     static void broadcast_rgbd(const Mat rgb, const Mat depth, int64_t utime, CameraWrapper* self);
     static void add_framerate_sample(int64_t utime, CameraWrapper* self);
+    static void detect_balls(const Mat rgb, const PointCloud<PointXYZ>::Ptr unordered_cloud, 
+        const PointCloud<PointXYZ>::Ptr ordered_cloud, int64_t utime, CameraWrapper* self);
 private:
     RealsenseInterface interface_;
     shared_ptr<ZCM> zcm_ptr_;
     atomic_bool stay_alive_;
     bool enabled_;
     thread camera_thread_;
+    BallDetector ball_detector_;
     // Task metadata section (managed)
     atomic_bool broadcast_rgbd_running_;
+    atomic_bool ball_detection_running_;
     // End Task metadata section
     static MeasureFramerate measure_framerate_;
 };
@@ -182,6 +194,7 @@ void CameraWrapper::join()
 void CameraWrapper::init_tasks()
 {
     broadcast_rgbd_running_ = false;
+    ball_detection_running_ = false;
 }
 
 void CameraWrapper::run_camera(CameraWrapper* self)
@@ -198,10 +211,14 @@ void CameraWrapper::run_camera(CameraWrapper* self)
         // Grab everything needed for tasks
         cv::Mat rgb = self->interface_.getRGB();
         cv::Mat depth = self->interface_.getDepth();
+        PointCloud<PointXYZ>::Ptr unordered_cloud = self->interface_.getPointCloudBasic();
+        PointCloud<PointXYZ>::Ptr ordered_cloud = self->interface_.getMappedPointCloud();
         int64_t utime = self->interface_.getUTime();
         // Start up task threads (task threads handle lifetime on their own using task metadata)
         thread(CameraWrapper::broadcast_rgbd, rgb, depth, utime, self).detach();
         thread(CameraWrapper::add_framerate_sample, utime, self).detach();
+        thread(CameraWrapper::detect_balls, rgb, unordered_cloud, ordered_cloud, utime, 
+            self).detach();
     }
 }
 
@@ -236,6 +253,29 @@ void CameraWrapper::add_framerate_sample(int64_t utime, CameraWrapper* self)
 }
 
 MeasureFramerate CameraWrapper::measure_framerate_;
+
+void CameraWrapper::detect_balls(const Mat rgb, const PointCloud<PointXYZ>::Ptr unordered_cloud, 
+    const PointCloud<PointXYZ>::Ptr ordered_cloud, int64_t utime, CameraWrapper* self)
+{
+    // Set metadata at start
+    if (self->ball_detection_running_)
+    {
+        cerr << "ball detection took too long\n";
+    }
+    self->ball_detection_running_ = true;
+
+    // Actual ball detection
+    ball_detections_t message = self->ball_detector_.detect(rgb, unordered_cloud, ordered_cloud);
+    message.utime = utime;
+    int64_t completion_time = std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::system_clock::now().time_since_epoch())
+                .count();
+    cerr << "completion time: " << completion_time - utime << '\n';
+    cerr << "num detections: " << message.num_detections << '\n';
+
+    self->zcm_ptr_->publish(channel::BALL_DETECTIONS, &message);
+    self->ball_detection_running_ = false;
+}
 
 // End task threads of CameraWrapper implementations
 // End CameraWrapper Section **************************************

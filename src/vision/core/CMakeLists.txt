@@ -42,3 +42,5 @@ target_link_libraries(VisionUtils
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
 )
+
+add_library(BallDetector SHARED BallDetector.cpp)

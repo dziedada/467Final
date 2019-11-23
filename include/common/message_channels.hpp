@@ -2,11 +2,11 @@
 
 namespace channel
 {
-    static const char* CAMERA_PREFIX;
-    static const char* CAMERA_1;
-    static const char* CAMERA_2;
-    static const char* CAMERA_3;
-    static const char* BALL_DETECTIONS;
-    static const char* TRACKED_BALLS;
+    extern const char* const CAMERA_PREFIX;
+    extern const char* const CAMERA_1;
+    extern const char* const CAMERA_2;
+    extern const char* const CAMERA_3;
+    extern const char* const BALL_DETECTIONS;
+    extern const char* const TRACKED_BALLS;
 }
 

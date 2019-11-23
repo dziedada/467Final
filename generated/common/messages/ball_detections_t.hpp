@@ -24,6 +24,8 @@ class ball_detections_t
 
         std::vector< ball_detection_t > detections;
 
+        int64_t    utime;
+
     public:
         /**
          * Destructs a message properly if anything inherits from it
@@ -136,6 +138,9 @@ int ball_detections_t::_encodeNoHash(void* buf, uint32_t offset, uint32_t maxlen
         if(thislen < 0) return thislen; else pos += thislen;
     }
 
+    thislen = __int64_t_encode_array(buf, offset + pos, maxlen - pos, &this->utime, 1);
+    if(thislen < 0) return thislen; else pos += thislen;
+
     return pos;
 }
 
@@ -153,6 +158,9 @@ int ball_detections_t::_decodeNoHash(const void* buf, uint32_t offset, uint32_t 
         if(thislen < 0) return thislen; else pos += thislen;
     }
 
+    thislen = __int64_t_decode_array(buf, offset + pos, maxlen - pos, &this->utime, 1);
+    if(thislen < 0) return thislen; else pos += thislen;
+
     return pos;
 }
 
@@ -163,6 +171,7 @@ uint32_t ball_detections_t::_getEncodedSizeNoHash() const
     for (int a0 = 0; a0 < this->num_detections; ++a0) {
         enc_size += this->detections[a0]._getEncodedSizeNoHash();
     }
+    enc_size += __int64_t_encoded_array_size(NULL, 1);
     return enc_size;
 }
 
@@ -174,7 +183,7 @@ uint64_t ball_detections_t::_computeHash(const __zcm_hash_ptr* p)
             return 0;
     const __zcm_hash_ptr cp = { p, (void*)ball_detections_t::getHash };
 
-    uint64_t hash = (uint64_t)0x259c115e87f8b7d0LL +
+    uint64_t hash = (uint64_t)0x5f4c31babd102c5bLL +
          ball_detection_t::_computeHash(&cp);
 
     return (hash<<1) + ((hash>>63)&1);

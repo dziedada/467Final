@@ -31,5 +31,7 @@ target_link_libraries(vision-driver
     ${YAMLCPP_LIBRARY}
     CameraInterface
     VisionUtils
+    BallDetector
+    common
     m
 )
