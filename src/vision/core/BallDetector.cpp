@@ -2,6 +2,7 @@
 #include <common/messages/ball_detections_t.hpp>
 #include <vision/core/BallDetector.hpp>
 #include <common/colors.hpp>
+#include <vision/core/PCLHeaderFix.hpp>
 
 #include <Eigen/Core>
 #include <opencv2/core.hpp>
@@ -13,10 +14,13 @@
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/common/geometry.h>
 
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <algorithm>
+#include <climits>
 
 using pcl::PointCloud;
 using pcl::PointXYZ;
@@ -28,6 +32,7 @@ using std::cerr;
 using std::endl;
 using std::vector;
 using std::shared_ptr;
+using std::numeric_limits;
 
 constexpr double HEIGHT_MIN = 0.009;
 constexpr double HEIGHT_MAX = 0.06;
@@ -47,15 +52,80 @@ const Mat DILATION_KERNEL = cv::getStructuringElement(cv::MORPH_RECT,
 const Mat EROSION_KERNEL_2 = cv::getStructuringElement(cv::MORPH_RECT,
     cv::Size(3, 3));
 
+PointXYZ& operator+=(PointXYZ& l, const PointXYZ& r)
+{
+    l.x += r.x;
+    l.y += r.y;
+    l.z += r.z;
+    return l;
+}
+
+PointXYZ operator/(const PointXYZ& l, const float div)
+{
+    PointXYZ result;
+    result.x = l.x / div;
+    result.y = l.y / div;
+    result.z = l.z / div;
+    return result;
+}
+
 class BallPrototype
 {
 public:
     BallPrototype(color::Color color_in) : color_ {color_in}, cloud_ {new PointCloud<PointXYZ>()} {}
+    PointXYZ get_raw_centroid();
+    float getRawDistToOther(BallPrototype& other);
+    float getColoredDistToOther(BallPrototype& other);
+    void assimilate(const BallPrototype& other);
     color::Color color_;
     PointCloud<PointXYZ>::Ptr cloud_;
     PointXYZ centroid_;
+    static const float MAX_POINT_DIST_FROM_CENTROID;
+private:
+    bool has_raw_centroid_ = false;
+    PointXYZ raw_centroid_;
 };
 
+const float BallPrototype::MAX_POINT_DIST_FROM_CENTROID = 0.04;
+
+PointXYZ BallPrototype::get_raw_centroid()
+{
+    if (has_raw_centroid_) return raw_centroid_;
+    int num_points = 0;
+    PointXYZ accumulator(0, 0, 0);
+    for (const auto& point : *cloud_)
+    {
+        accumulator += point;
+        ++num_points;
+    }
+    raw_centroid_ = accumulator / num_points;
+    has_raw_centroid_ = true;
+    return raw_centroid_;
+}
+
+float BallPrototype::getRawDistToOther(BallPrototype& other)
+{
+    return pcl::geometry::distance(get_raw_centroid(), other.get_raw_centroid());
+}
+
+float BallPrototype::getColoredDistToOther(BallPrototype& other)
+{
+    if (color_ != other.color_) return numeric_limits<float>::max();
+    return pcl::geometry::distance(get_raw_centroid(), other.get_raw_centroid());
+}
+
+void BallPrototype::assimilate(const BallPrototype& other)
+{
+    for (const auto& point : *other.cloud_)
+    {
+        cloud_->push_back(point);
+    }
+}
+
+vector<shared_ptr<BallPrototype> > prunePrototypes(
+    vector<shared_ptr<BallPrototype> >& prototypes);
+vector<shared_ptr<BallPrototype> > binPrototypes(
+    const vector<shared_ptr<BallPrototype> >& prototypes);
 vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallPrototype> >& prototypes);
 Mat maskByHeight(const Mat rgb, PointCloud<PointXYZ>::Ptr ordered_cloud, 
     const MatrixXf& ground_coefs);
@@ -126,6 +196,10 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     };
     extractPrototypes(green_mask, color::Green);
     extractPrototypes(orange_mask, color::Orange);
+    // Combine prototypes of the same color that are nearby
+    prototypes = binPrototypes(prototypes);
+    // Remove prototypes of different colors that are too close to others based on num points
+    prototypes = prunePrototypes(prototypes);
     // Ransac Sphere Fitting on point clouds corresponding to detected blobs
     // Prune 'spheres' that aren't likely to be balls // TODO can be merged with the "masking" step
     vector<shared_ptr<BallPrototype> > complete_prototypes = fitSpheres(prototypes);
@@ -140,6 +214,63 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     }
     detections.num_detections = detections.detections.size();
     return detections;
+}
+
+vector<shared_ptr<BallPrototype> > prunePrototypes(
+    vector<shared_ptr<BallPrototype> >& prototypes)
+{
+    // Sort prototypes based on cloud size so that biggest are in front
+    // That way nothing needs to be removed from the processed vector
+    std::sort(prototypes.begin(), prototypes.end(), 
+        [](const shared_ptr<BallPrototype>& l, const shared_ptr<BallPrototype>& r)
+        {
+            return l->cloud_->size() > r->cloud_->size();
+        });
+    // Perform the selective keeping which performs the pruning
+    vector<shared_ptr<BallPrototype> > processed_prototypes;
+    for (const auto& prototype : prototypes)
+    {
+        bool is_good = true;
+        for (auto& other : processed_prototypes)
+        {
+            if (prototype->getRawDistToOther(*other) < BallPrototype::MAX_POINT_DIST_FROM_CENTROID)
+            {
+                is_good = false;
+                break;
+            }
+        }
+        if (is_good) processed_prototypes.push_back(prototype);
+    }
+    return processed_prototypes;
+}
+
+vector<shared_ptr<BallPrototype> > binPrototypes(
+    const vector<shared_ptr<BallPrototype> >& prototypes)
+{
+    vector<shared_ptr<BallPrototype> > processed_prototypes;
+    for (const auto& prototype : prototypes)
+    {
+        float best_dist = 99999.0;
+        shared_ptr<BallPrototype> best_prototype;
+        for (auto& candidate : processed_prototypes)
+        {
+            float dist = candidate->getColoredDistToOther(*prototype);
+            if (dist < best_dist)
+            {
+                best_dist = dist;
+                best_prototype = candidate;
+            }
+        }
+        if (best_dist <= BallPrototype::MAX_POINT_DIST_FROM_CENTROID)
+        {
+            best_prototype->assimilate(*prototype);
+        }
+        else
+        {
+            processed_prototypes.push_back(prototype);
+        }
+    }
+    return processed_prototypes;
 }
 
 vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallPrototype> >& prototypes)
