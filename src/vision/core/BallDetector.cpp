@@ -31,6 +31,9 @@ using std::shared_ptr;
 
 constexpr double HEIGHT_MIN = 0.009;
 constexpr double HEIGHT_MAX = 0.06;
+// const double BALL_RADIUS = 0.02133;
+constexpr double BALL_RADIUS_MIN = 0.016;
+constexpr double BALL_RADIUS_MAX = 0.04;
 
 const cv::Scalar GREEN_MIN(32, 100, 30);
 const cv::Scalar GREEN_MAX(71, 255, 255);
@@ -41,6 +44,8 @@ const Mat EROSION_KERNEL = cv::getStructuringElement(cv::MORPH_RECT,
     cv::Size(5, 5));
 const Mat DILATION_KERNEL = cv::getStructuringElement(cv::MORPH_RECT,
     cv::Size(7, 7));
+const Mat EROSION_KERNEL_2 = cv::getStructuringElement(cv::MORPH_RECT,
+    cv::Size(3, 3));
 
 class BallPrototype
 {
@@ -89,8 +94,10 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     cv::threshold(orange_masked, orange_mask, 0.0, 1.0, cv::THRESH_BINARY);
     cv::erode(green_mask, green_mask, EROSION_KERNEL);
     cv::dilate(green_mask, green_mask, DILATION_KERNEL);
+    cv::erode(green_mask, green_mask, EROSION_KERNEL_2);
     cv::erode(orange_mask, orange_mask, EROSION_KERNEL);
     cv::dilate(orange_mask, orange_mask, DILATION_KERNEL);
+    cv::erode(orange_mask, orange_mask, EROSION_KERNEL_2);
     // Extract Detected masses of color and create BallPrototypes
     uint8_t curr_label = 2;
     vector<shared_ptr<BallPrototype> > prototypes;
@@ -141,11 +148,8 @@ vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallProtot
     auto fitSphere = [&](const shared_ptr<BallPrototype>& prototype)
     {
         if (!prototype->cloud_->size()) return;
-        const double inlier_thresh_ = 0.4;
-        const double NECESSARY_INLIER_PROPORTION = 0.8;
-        // const double BALL_RADIUS = 0.02133;
-        const double BALL_RADIUS_MIN = 0.014;
-        const double BALL_RADIUS_MAX = 0.026;
+        const double inlier_thresh_ = 0.01;
+        const double NECESSARY_INLIER_PROPORTION = 0.6;
         // Set up pcl plane segmentation data
         pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
@@ -157,6 +161,8 @@ vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallProtot
         segs.setModelType(pcl::SACMODEL_SPHERE);
         segs.setMethodType(pcl::SAC_RANSAC);
         segs.setDistanceThreshold(inlier_thresh_);
+        segs.setMaxIterations(1000);
+        segs.setRadiusLimits(BALL_RADIUS_MIN, BALL_RADIUS_MAX);
         // Old distanceThreshold at 0.3
         segs.setOptimizeCoefficients(true);
         // Set the cloud to use for plane fitting
@@ -167,30 +173,15 @@ vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallProtot
         // If no model found, return failure
         if (inliers->indices.size() < (NECESSARY_INLIER_PROPORTION * prototype->cloud_->size()))
         {
-            cout << "Inliers only: " 
-                << static_cast<double>(inliers->indices.size()) / prototype->cloud_->size() << '\n';
             return;
         }
         if (coefficients->values.size())
         {
-            if (coefficients->values[3] > BALL_RADIUS_MIN &&
-                coefficients->values[3] < BALL_RADIUS_MAX)
-            {
-                complete_prototypes_.push_back(prototype);
-                complete_prototypes_.back()->centroid_.x = coefficients->values[0];
-                complete_prototypes_.back()->centroid_.y = coefficients->values[1];
-                complete_prototypes_.back()->centroid_.z = coefficients->values[2];
-            }
-            else
-            {
-                cout << "Fitted Sphere Radius: " << coefficients->values[3] << '\n';
-            }
+            complete_prototypes_.push_back(prototype);
+            complete_prototypes_.back()->centroid_.x = coefficients->values[0];
+            complete_prototypes_.back()->centroid_.y = coefficients->values[1];
+            complete_prototypes_.back()->centroid_.z = coefficients->values[2];
         }
-        else
-        {
-            cout << "No Coefficients" << '\n';
-        }
-        
     };
     // This loop populates the complete_prototypes_ vector
     for (const auto& prototype: prototypes)

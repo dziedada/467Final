@@ -40,6 +40,9 @@ RealsenseInterface::RealsenseInterface(YAML::Node config)
 
     if (!publish_pos_)
     {
+        rs2::device selected_dev = selection.get_device();
+        rs2::depth_sensor depth_sensor = selected_dev.first<rs2::depth_sensor>();
+        depth_sensor.set_option(RS2_OPTION_DEPTH_UNITS, 0.0001);
         // get intrinsics
         auto depth_stream =
             selection.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
