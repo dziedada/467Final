@@ -216,7 +216,7 @@ void CameraWrapper::run_camera(CameraWrapper* self)
         int64_t utime = self->interface_.getUTime();
         // Start up task threads (task threads handle lifetime on their own using task metadata)
         thread(CameraWrapper::broadcast_rgbd, rgb, depth, utime, self).detach();
-        thread(CameraWrapper::add_framerate_sample, utime, self).detach();
+        // thread(CameraWrapper::add_framerate_sample, utime, self).detach();
         thread(CameraWrapper::detect_balls, rgb, unordered_cloud, ordered_cloud, utime, 
             self).detach();
     }
@@ -267,11 +267,17 @@ void CameraWrapper::detect_balls(const Mat rgb, const PointCloud<PointXYZ>::Ptr 
     // Actual ball detection
     ball_detections_t message = self->ball_detector_.detect(rgb, unordered_cloud, ordered_cloud);
     message.utime = utime;
-    int64_t completion_time = std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::system_clock::now().time_since_epoch())
-                .count();
-    cerr << "completion time: " << completion_time - utime << '\n';
-    cerr << "num detections: " << message.num_detections << '\n';
+    /*
+    auto profile = [&]()
+    {
+        int64_t completion_time = std::chrono::duration_cast<std::chrono::microseconds>(
+                    std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+        cerr << "completion time: " << completion_time - utime << '\n';
+        cerr << "num detections: " << message.num_detections << '\n';
+    };
+    profile();
+    */
 
     self->zcm_ptr_->publish(channel::BALL_DETECTIONS, &message);
     self->ball_detection_running_ = false;

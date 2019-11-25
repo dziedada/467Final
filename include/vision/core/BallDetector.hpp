@@ -10,8 +10,12 @@
 class BallDetector
 {
 public:
+    BallDetector();
+    BallDetector(float min_radius, float max_radius);
     ball_detections_t detect(const cv::Mat rgb, 
         const pcl::PointCloud<pcl::PointXYZ>::Ptr unordered_cloud,
         const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+    const float min_radius_;
+    const float max_radius_;
 };
 

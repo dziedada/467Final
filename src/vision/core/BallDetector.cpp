@@ -122,11 +122,16 @@ void BallPrototype::assimilate(const BallPrototype& other)
     }
 }
 
+BallDetector::BallDetector() : min_radius_ {BALL_RADIUS_MIN}, max_radius_ {BALL_RADIUS_MAX} {}
+BallDetector::BallDetector(float min_radius, float max_radius) : min_radius_ {min_radius}, 
+    max_radius_ {max_radius} {}
+
 vector<shared_ptr<BallPrototype> > prunePrototypes(
     vector<shared_ptr<BallPrototype> >& prototypes);
 vector<shared_ptr<BallPrototype> > binPrototypes(
     const vector<shared_ptr<BallPrototype> >& prototypes);
-vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallPrototype> >& prototypes);
+vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallPrototype> >& prototypes,
+    const BallDetector& detector);
 Mat maskByHeight(const Mat rgb, PointCloud<PointXYZ>::Ptr ordered_cloud, 
     const MatrixXf& ground_coefs);
 ball_detections_t failure();
@@ -216,7 +221,7 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     prototypes = prunePrototypes(prototypes);
     // Ransac Sphere Fitting on point clouds corresponding to detected blobs
     // Prune 'spheres' that aren't likely to be balls // TODO can be merged with the "masking" step
-    vector<shared_ptr<BallPrototype> > complete_prototypes = fitSpheres(prototypes);
+    vector<shared_ptr<BallPrototype> > complete_prototypes = fitSpheres(prototypes, *this);
     // Convert to the returned representation (ball_detections_t)
     ball_detections_t detections;
     for (const auto& prototype : complete_prototypes)
@@ -287,7 +292,8 @@ vector<shared_ptr<BallPrototype> > binPrototypes(
     return processed_prototypes;
 }
 
-vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallPrototype> >& prototypes)
+vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallPrototype> >& prototypes,
+    const BallDetector& detector)
 {
     vector<shared_ptr<BallPrototype> > complete_prototypes_;
     auto fitSphere = [&](const shared_ptr<BallPrototype>& prototype)
@@ -307,7 +313,7 @@ vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallProtot
         segs.setMethodType(pcl::SAC_RANSAC);
         segs.setDistanceThreshold(inlier_thresh_);
         segs.setMaxIterations(1000);
-        segs.setRadiusLimits(BALL_RADIUS_MIN, BALL_RADIUS_MAX);
+        segs.setRadiusLimits(detector.min_radius_, detector.max_radius_);
         // Old distanceThreshold at 0.3
         segs.setOptimizeCoefficients(true);
         // Set the cloud to use for plane fitting
@@ -343,22 +349,26 @@ Mat maskByHeight(const Mat rgb, PointCloud<PointXYZ>::Ptr ordered_cloud,
         static_cast<uint32_t>(rgb.rows) != ordered_cloud->height)
     {
         cerr << "Error: ordered_cloud and rgb image must have same dimensions!!!" << endl;
-        // exit(1);
+        exit(1);
     }
     Mat mask(rgb.rows, rgb.cols, CV_8UC1);
     // Compute denominator because only depends on plane
-    double denominator = sqrt(ground_coefs(1) * ground_coefs(1) + 
-                              ground_coefs(2) * ground_coefs(2) +
-                              ground_coefs(3) * ground_coefs(3));
+    const double plane_x = ground_coefs(0);
+    const double plane_y = ground_coefs(1);
+    const double plane_z = ground_coefs(2);
+    const double plane_d = ground_coefs(3);
+    const double denominator = sqrt(plane_y * plane_y + 
+                              plane_z * plane_z +
+                              plane_d * plane_d);
     for (size_t y = 0; y < ordered_cloud->height; ++y)
     {
         for (size_t x = 0; x < ordered_cloud->width; ++x)
         {
             const PointXYZ& point = ordered_cloud->operator()(x, y);
-            double numerator = fabs(ground_coefs(0) * point.x +
-                                    ground_coefs(1) * point.y +
-                                    ground_coefs(2) * point.z +
-                                    ground_coefs(3));
+            double numerator = fabs(plane_x * point.x +
+                                    plane_y * point.y +
+                                    plane_z * point.z +
+                                    plane_d);
             double height = numerator / denominator;
             if (height < HEIGHT_MIN || height > HEIGHT_MAX) mask.at<uchar>(cv::Point(x, y)) = 0;
             else 
