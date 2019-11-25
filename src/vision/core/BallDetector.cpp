@@ -80,13 +80,10 @@ public:
     color::Color color_;
     PointCloud<PointXYZ>::Ptr cloud_;
     PointXYZ centroid_;
-    static const float MAX_POINT_DIST_FROM_CENTROID;
 private:
     bool has_raw_centroid_ = false;
     PointXYZ raw_centroid_;
 };
-
-const float BallPrototype::MAX_POINT_DIST_FROM_CENTROID = 0.04;
 
 PointXYZ BallPrototype::get_raw_centroid()
 {
@@ -127,15 +124,16 @@ BallDetector::BallDetector(float min_radius, float max_radius) : min_radius_ {mi
     max_radius_ {max_radius} {}
 
 vector<shared_ptr<BallPrototype> > prunePrototypes(
-    vector<shared_ptr<BallPrototype> >& prototypes);
+    vector<shared_ptr<BallPrototype> >& prototypes,
+    const BallDetector& detector);
 vector<shared_ptr<BallPrototype> > binPrototypes(
-    const vector<shared_ptr<BallPrototype> >& prototypes);
+    const vector<shared_ptr<BallPrototype> >& prototypes,
+    const BallDetector& detector);
 vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallPrototype> >& prototypes,
     const BallDetector& detector);
 Mat maskByHeight(const Mat rgb, PointCloud<PointXYZ>::Ptr ordered_cloud, 
     const MatrixXf& ground_coefs);
 ball_detections_t failure();
-MatrixXf fitPlane(PointCloud<PointXYZ>::Ptr cloud);
 
 ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unordered_cloud,
     PointCloud<PointXYZ>::Ptr ordered_cloud)
@@ -216,9 +214,9 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     extractPrototypes(green_mask, color::Green);
     extractPrototypes(orange_mask, color::Orange);
     // Combine prototypes of the same color that are nearby
-    prototypes = binPrototypes(prototypes);
+    prototypes = binPrototypes(prototypes, *this);
     // Remove prototypes of different colors that are too close to others based on num points
-    prototypes = prunePrototypes(prototypes);
+    prototypes = prunePrototypes(prototypes, *this);
     // Ransac Sphere Fitting on point clouds corresponding to detected blobs
     // Prune 'spheres' that aren't likely to be balls // TODO can be merged with the "masking" step
     vector<shared_ptr<BallPrototype> > complete_prototypes = fitSpheres(prototypes, *this);
@@ -236,7 +234,8 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
 }
 
 vector<shared_ptr<BallPrototype> > prunePrototypes(
-    vector<shared_ptr<BallPrototype> >& prototypes)
+    vector<shared_ptr<BallPrototype> >& prototypes,
+    const BallDetector& detector)
 {
     // Sort prototypes based on cloud size so that biggest are in front
     // That way nothing needs to be removed from the processed vector
@@ -252,7 +251,7 @@ vector<shared_ptr<BallPrototype> > prunePrototypes(
         bool is_good = true;
         for (auto& other : processed_prototypes)
         {
-            if (prototype->getRawDistToOther(*other) < BallPrototype::MAX_POINT_DIST_FROM_CENTROID)
+            if (prototype->getRawDistToOther(*other) < detector.max_radius_)
             {
                 is_good = false;
                 break;
@@ -264,7 +263,8 @@ vector<shared_ptr<BallPrototype> > prunePrototypes(
 }
 
 vector<shared_ptr<BallPrototype> > binPrototypes(
-    const vector<shared_ptr<BallPrototype> >& prototypes)
+    const vector<shared_ptr<BallPrototype> >& prototypes,
+    const BallDetector& detector)
 {
     vector<shared_ptr<BallPrototype> > processed_prototypes;
     for (const auto& prototype : prototypes)
@@ -280,7 +280,7 @@ vector<shared_ptr<BallPrototype> > binPrototypes(
                 best_prototype = candidate;
             }
         }
-        if (best_dist <= BallPrototype::MAX_POINT_DIST_FROM_CENTROID)
+        if (best_dist <= detector.max_radius_)
         {
             best_prototype->assimilate(*prototype);
         }
@@ -393,7 +393,7 @@ ball_detections_t failure()
     return failure;
 }
 
-MatrixXf fitPlane(PointCloud<PointXYZ>::Ptr cloud)
+MatrixXf BallDetector::fitPlane(PointCloud<PointXYZ>::Ptr cloud)
 {
     const double inlier_thresh_ = 0.4;
     const double NECESSARY_INLIER_PROPORTION = 0.7;
