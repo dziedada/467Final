@@ -15,8 +15,10 @@ forward:
   width: 640
   height: 480
   fps: 30                # 15, 30, or 60
-  serial: "819112070800" # 12 digit number on bottom of realsense camera
-  # serial: "819112072448" # 12 digit number on bottom of realsense camera
+  serial: "819112070800" # 12 digit number on bottom of realsense camera Light blue
+  # serial: "739112061142" # 12 digit number on bottom of realsense camera D415
+  # serial: "819112072448" # 12 digit number on bottom of realsense camera Purple
+  # serial: "819112070694" # 12 digit number on bottom of realsense camera Orange
   publish_rgbd: true
   publish_pointcloud: true
   enable_autoexposure: false

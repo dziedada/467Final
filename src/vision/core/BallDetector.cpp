@@ -40,7 +40,7 @@ constexpr double HEIGHT_MAX = 0.06;
 constexpr double BALL_RADIUS_MIN = 0.016;
 constexpr double BALL_RADIUS_MAX = 0.04;
 
-const cv::Scalar GREEN_MIN(32, 100, 30);
+const cv::Scalar GREEN_MIN(32, 60, 30);
 const cv::Scalar GREEN_MAX(71, 255, 255);
 const cv::Scalar ORANGE_MIN(0, 150, 30);
 const cv::Scalar ORANGE_MAX(23, 255, 255);
@@ -153,13 +153,6 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     Mat orange_mask;
     cv::inRange(masked, GREEN_MIN, GREEN_MAX, green_masked);
     cv::inRange(masked, ORANGE_MIN, ORANGE_MAX, orange_masked);
-    //cv::namedWindow("Masked", cv::WINDOW_AUTOSIZE);
-    //cv::namedWindow("Green Masked", cv::WINDOW_AUTOSIZE);
-    //cv::namedWindow("Orange Masked", cv::WINDOW_AUTOSIZE);
-    //imshow("Masked", masked);
-    //imshow("Green Masked", green_masked);
-    //imshow("Orange Masked", orange_masked);
-    //cv::waitKey(0);
     cv::threshold(green_masked, green_mask, 0.0, 1.0, cv::THRESH_BINARY);
     cv::threshold(orange_masked, orange_mask, 0.0, 1.0, cv::THRESH_BINARY);
     cv::erode(green_mask, green_mask, EROSION_KERNEL);
@@ -168,6 +161,27 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     cv::erode(orange_mask, orange_mask, EROSION_KERNEL);
     cv::dilate(orange_mask, orange_mask, DILATION_KERNEL);
     cv::erode(orange_mask, orange_mask, EROSION_KERNEL_2);
+    /*
+    auto visualize = [&]() 
+    {
+        cv::namedWindow("Masked", cv::WINDOW_AUTOSIZE);
+        cv::namedWindow("Green Masked", cv::WINDOW_AUTOSIZE);
+        cv::namedWindow("Orange Masked", cv::WINDOW_AUTOSIZE);
+        cv::namedWindow("Green Final", cv::WINDOW_AUTOSIZE);
+        cv::namedWindow("Orange Final", cv::WINDOW_AUTOSIZE);
+        Mat green_vis;
+        Mat orange_vis;
+        cv::threshold(green_mask, green_vis, 0.0, 254.0, cv::THRESH_BINARY);
+        cv::threshold(orange_mask, orange_vis, 0.0, 254.0, cv::THRESH_BINARY);
+        imshow("Masked", masked);
+        imshow("Green Masked", green_masked);
+        imshow("Orange Masked", orange_masked);
+        imshow("Green Final", green_vis);
+        imshow("Orange Final", orange_vis);
+        cv::waitKey(0);
+    };
+    visualize();
+    */
     // Extract Detected masses of color and create BallPrototypes
     uint8_t curr_label = 2;
     vector<shared_ptr<BallPrototype> > prototypes;
@@ -347,7 +361,14 @@ Mat maskByHeight(const Mat rgb, PointCloud<PointXYZ>::Ptr ordered_cloud,
                                     ground_coefs(3));
             double height = numerator / denominator;
             if (height < HEIGHT_MIN || height > HEIGHT_MAX) mask.at<uchar>(cv::Point(x, y)) = 0;
-            else mask.at<uchar>(cv::Point(x, y)) = 1;
+            else 
+            {
+                mask.at<uchar>(cv::Point(x, y)) = 1;
+                // The below is run if ball color needs to be recalibrated
+                // cv::Vec3b pixel = rgb.at<cv::Vec3b>(cv::Point(x, y));
+                // cout << static_cast<int>(pixel[0]) << ", " << static_cast<int>(pixel[1]) << ", " 
+                //     << static_cast<int>(pixel[2]) << '\n';
+            }
         }
     }
     Mat masked(rgb.rows, rgb.cols, rgb.type(), cv::Scalar(0, 0, 0));
