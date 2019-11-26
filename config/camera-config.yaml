@@ -94,3 +94,16 @@ other-forward: # To accomodate the t265 in use with the other cameras
     - 0
     - 0
     - 0
+
+calibration-config:
+  num_samples_required: 1000
+  green_ground_truth:
+    x: 0
+    y: 0
+    z: 0
+  orange_ground_truth:
+    x: 0
+    y: 0
+    z: 0
+  min_ball_radius: 0.011
+  max_ball_radius: 0.04
