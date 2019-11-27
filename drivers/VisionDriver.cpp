@@ -342,11 +342,12 @@ int main(int argc, char**argv)
     // Create camera wrappers
     vector<shared_ptr<CameraWrapper>> wrappers;
     wrappers.reserve(4);
-    wrappers.emplace_back(new CameraWrapper(config["forward"], config, zcm_ptr));
+    wrappers.emplace_back(new CameraWrapper(config["forward"], config["calibration"], zcm_ptr));
     sleep_for(milliseconds(8));
-    wrappers.emplace_back(new CameraWrapper(config["downward"], config, zcm_ptr));
+    wrappers.emplace_back(new CameraWrapper(config["downward"], config["calibration"], zcm_ptr));
     sleep_for(milliseconds(8));
-    wrappers.emplace_back(new CameraWrapper(config["other-forward"], config, zcm_ptr));
+    wrappers.emplace_back(new CameraWrapper(config["other-forward"], config["calibration"], 
+        zcm_ptr));
     // Start all the camera wrappers
     for (auto& wrapper : wrappers)
     {

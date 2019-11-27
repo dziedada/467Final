@@ -95,7 +95,7 @@ other-forward: # To accomodate the t265 in use with the other cameras
     - 0
     - 0
 
-calibration-config:
+calibration:
   num_samples_required: 1000
   green_ground_truth:
     x: 0
