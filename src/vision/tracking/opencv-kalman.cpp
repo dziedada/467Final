@@ -4,16 +4,16 @@
  ******************************************/
 
 // Module "core"
-#include <opencv2/core/core.hpp>
+#include <opencv2/core.hpp>
 
 // Module "highgui"
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/highgui.hpp>
 
 // Module "imgproc"
-#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/imgproc.hpp>
 
 // Module "video"
-#include <opencv2/video/video.hpp>
+#include <opencv2/video.hpp>
 
 // Output
 #include <iostream>
