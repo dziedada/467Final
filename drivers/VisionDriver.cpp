@@ -146,7 +146,7 @@ double MeasureFramerate::compute_average_disparity(const vector<int64_t>& dispar
 class CameraWrapper
 {
 public:
-    CameraWrapper(const YAML::Node& config, shared_ptr<ZCM> zcm_ptr);
+    CameraWrapper(const YAML::Node& config, const YAML::Node& root_config, shared_ptr<ZCM> zcm_ptr);
     void start();
     void stop();
     void join();
@@ -156,23 +156,28 @@ public:
     static void add_framerate_sample(int64_t utime, CameraWrapper* self);
     static void detect_balls(const Mat rgb, const PointCloud<PointXYZ>::Ptr unordered_cloud, 
         const PointCloud<PointXYZ>::Ptr ordered_cloud, int64_t utime, CameraWrapper* self);
+    static void calibration(const Mat rgb, const PointCloud<PointXYZ>::Ptr unordered_cloud, 
+        const PointCloud<PointXYZ>::Ptr ordered_cloud, CameraWrapper* self);
 private:
     RealsenseInterface interface_;
     shared_ptr<ZCM> zcm_ptr_;
     atomic_bool stay_alive_;
     bool enabled_;
+    Calibrator calibrator_;
     thread camera_thread_;
     BallDetector ball_detector_;
     // Task metadata section (managed)
     atomic_bool broadcast_rgbd_running_;
     atomic_bool ball_detection_running_;
+    atomic_bool calibrator_running_;
     // End Task metadata section
     static MeasureFramerate measure_framerate_;
 };
 
-CameraWrapper::CameraWrapper(const YAML::Node& config, shared_ptr<ZCM> zcm_ptr) :
+CameraWrapper::CameraWrapper(const YAML::Node& config, const YAML::Node& root_config, 
+    shared_ptr<ZCM> zcm_ptr) :
     interface_ {RealsenseInterface(config)}, zcm_ptr_ {zcm_ptr}, stay_alive_ {atomic_bool(true)},
-    enabled_ {config["enabled"].as<bool>()}
+    enabled_ {config["enabled"].as<bool>()}, calibrator_ {Calibrator(root_config)}
 {
 }
 
@@ -196,6 +201,7 @@ void CameraWrapper::init_tasks()
 {
     broadcast_rgbd_running_ = false;
     ball_detection_running_ = false;
+    calibrator_running_ = false;
 }
 
 void CameraWrapper::run_camera(CameraWrapper* self)
@@ -219,6 +225,8 @@ void CameraWrapper::run_camera(CameraWrapper* self)
         thread(CameraWrapper::broadcast_rgbd, rgb, depth, utime, self).detach();
         // thread(CameraWrapper::add_framerate_sample, utime, self).detach();
         thread(CameraWrapper::detect_balls, rgb, unordered_cloud, ordered_cloud, utime, 
+            self).detach();
+        thread(CameraWrapper::calibration, rgb, unordered_cloud, ordered_cloud, 
             self).detach();
     }
 }
@@ -261,7 +269,8 @@ void CameraWrapper::detect_balls(const Mat rgb, const PointCloud<PointXYZ>::Ptr 
     // Set metadata at start
     if (self->ball_detection_running_)
     {
-        cerr << "ball detection took too long\n";
+        // cerr << "ball detection took too long\n";
+        return;
     }
     self->ball_detection_running_ = true;
 
@@ -282,6 +291,21 @@ void CameraWrapper::detect_balls(const Mat rgb, const PointCloud<PointXYZ>::Ptr 
 
     self->zcm_ptr_->publish(channel::BALL_DETECTIONS, &message);
     self->ball_detection_running_ = false;
+}
+
+void CameraWrapper::calibration(const Mat rgb, const PointCloud<PointXYZ>::Ptr unordered_cloud, 
+    const PointCloud<PointXYZ>::Ptr ordered_cloud, CameraWrapper* self)
+{
+    // Set metadata at start
+    if (self->calibrator_running_)
+    {
+        return;
+    }
+    self->calibrator_running_ = true;
+
+    // Actual ball detection
+    self->calibrator_.add_sample(rgb, ordered_cloud, unordered_cloud);
+    self->calibrator_running_ = false;
 }
 
 // End task threads of CameraWrapper implementations
@@ -318,11 +342,11 @@ int main(int argc, char**argv)
     // Create camera wrappers
     vector<shared_ptr<CameraWrapper>> wrappers;
     wrappers.reserve(4);
-    wrappers.emplace_back(new CameraWrapper(config["forward"], zcm_ptr));
+    wrappers.emplace_back(new CameraWrapper(config["forward"], config, zcm_ptr));
     sleep_for(milliseconds(8));
-    wrappers.emplace_back(new CameraWrapper(config["downward"], zcm_ptr));
+    wrappers.emplace_back(new CameraWrapper(config["downward"], config, zcm_ptr));
     sleep_for(milliseconds(8));
-    wrappers.emplace_back(new CameraWrapper(config["other-forward"], zcm_ptr));
+    wrappers.emplace_back(new CameraWrapper(config["other-forward"], config, zcm_ptr));
     // Start all the camera wrappers
     for (auto& wrapper : wrappers)
     {

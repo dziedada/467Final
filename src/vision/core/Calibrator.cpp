@@ -72,7 +72,13 @@ void Calibrator::add_sample(cv::Mat rgb,
 class Bin
 {
 public:
-    Bin(float x, float y, float z, color::Color ball_color);
+    Bin(float x, float y, float z, color::Color ball_color)
+    {
+        centroid_.position[0] = x;
+        centroid_.position[1] = y;
+        centroid_.position[2] = z;
+        centroid_.color = ball_color;
+    }
     const ball_detection_t& getCentroid() const {return centroid_;}
     color::Color getColor() const {return static_cast<color::Color>(centroid_.color);}
     size_t size() const {return detections_.size();}
