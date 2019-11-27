@@ -1,6 +1,7 @@
 #include <vision/core/utilities.hpp>
 #include <vision/core/RealsenseInterface.hpp>
 #include <vision/core/BallDetector.hpp>
+#include <vision/core/Calibrator.hpp>
 #include <common/message_channels.hpp>
 #include <common/messages/depth_image_t.hpp>
 #include <common/messages/rgb_image_t.hpp>

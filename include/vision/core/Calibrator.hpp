@@ -17,8 +17,8 @@ public:
         pcl::PointCloud<pcl::PointXYZ>::Ptr unordered_cloud);
 private:
     void compute_extrinsics();
-    pcl::PointXYZ green_ball_ground_truth_;
-    pcl::PointXYZ orange_ball_ground_truth_;
+    Eigen::Vector3f green_ball_ground_truth_;
+    Eigen::Vector3f orange_ball_ground_truth_;
     int num_samples_needed_;
     int current_num_samples_;
     BallDetector detector_;

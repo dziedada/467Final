@@ -22,7 +22,7 @@ class ball_detection_t
 
         int64_t    utime;
 
-        double     position[2];
+        double     position[3];
 
     public:
         /**
@@ -134,7 +134,7 @@ int ball_detection_t::_encodeNoHash(void* buf, uint32_t offset, uint32_t maxlen)
     thislen = __int64_t_encode_array(buf, offset + pos, maxlen - pos, &this->utime, 1);
     if(thislen < 0) return thislen; else pos += thislen;
 
-    thislen = __double_encode_array(buf, offset + pos, maxlen - pos, &this->position[0], 2);
+    thislen = __double_encode_array(buf, offset + pos, maxlen - pos, &this->position[0], 3);
     if(thislen < 0) return thislen; else pos += thislen;
 
     return pos;
@@ -151,7 +151,7 @@ int ball_detection_t::_decodeNoHash(const void* buf, uint32_t offset, uint32_t m
     thislen = __int64_t_decode_array(buf, offset + pos, maxlen - pos, &this->utime, 1);
     if(thislen < 0) return thislen; else pos += thislen;
 
-    thislen = __double_decode_array(buf, offset + pos, maxlen - pos, &this->position[0], 2);
+    thislen = __double_decode_array(buf, offset + pos, maxlen - pos, &this->position[0], 3);
     if(thislen < 0) return thislen; else pos += thislen;
 
     return pos;
@@ -162,13 +162,13 @@ uint32_t ball_detection_t::_getEncodedSizeNoHash() const
     uint32_t enc_size = 0;
     enc_size += __int8_t_encoded_array_size(NULL, 1);
     enc_size += __int64_t_encoded_array_size(NULL, 1);
-    enc_size += __double_encoded_array_size(NULL, 2);
+    enc_size += __double_encoded_array_size(NULL, 3);
     return enc_size;
 }
 
 uint64_t ball_detection_t::_computeHash(const __zcm_hash_ptr*)
 {
-    uint64_t hash = (uint64_t)0x2e1a06c1a9fc38d5LL;
+    uint64_t hash = (uint64_t)0x2e1a06c1a9fc38d6LL;
     return (hash<<1) + ((hash>>63)&1);
 }
 

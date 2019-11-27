@@ -5,5 +5,5 @@ struct ball_detection_t
 {
 	int8_t color;
 	int64_t utime;
-	double position[2];
+	double position[3];
 }

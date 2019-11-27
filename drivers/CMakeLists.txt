@@ -32,6 +32,7 @@ target_link_libraries(vision-driver
     CameraInterface
     VisionUtils
     BallDetector
+    Calibrator
     common
     m
 )
