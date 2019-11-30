@@ -142,6 +142,7 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     MatrixXf ground_plane = fitPlane(unordered_cloud);
     if (ground_plane.size() == 0)
     {
+        cerr << "No ground coefficients...\n";
         return failure();
     }
     // Mask out the pixels corresponding to points outside of the height range
@@ -164,7 +165,7 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     cv::erode(orange_mask, orange_mask, EROSION_KERNEL);
     cv::dilate(orange_mask, orange_mask, DILATION_KERNEL);
     cv::erode(orange_mask, orange_mask, EROSION_KERNEL_2);
-    /*
+    /* 
     auto visualize = [&]() 
     {
         cv::namedWindow("Masked", cv::WINDOW_AUTOSIZE);
@@ -299,8 +300,8 @@ vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallProtot
     vector<shared_ptr<BallPrototype> > complete_prototypes_;
     auto fitSphere = [&](const shared_ptr<BallPrototype>& prototype)
     {
-        if (!prototype->cloud_->size()) return;
-        const double inlier_thresh_ = 0.01;
+        if (!prototype->cloud_->size()) {cerr << "empty cloud...\n"; return;}
+        const double inlier_thresh_ = 0.02;
         const double NECESSARY_INLIER_PROPORTION = 0.6;
         // Set up pcl plane segmentation data
         pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
@@ -325,6 +326,7 @@ vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallProtot
         // If no model found, return failure
         if (inliers->indices.size() < (NECESSARY_INLIER_PROPORTION * prototype->cloud_->size()))
         {
+            cerr << "Not enough inliers" << '\n'; // TODO DEBUG
             return;
         }
         if (coefficients->values.size())
@@ -334,6 +336,11 @@ vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallProtot
             complete_prototypes_.back()->centroid_.y = coefficients->values[1];
             complete_prototypes_.back()->centroid_.z = coefficients->values[2];
         }
+        else
+        {
+            cerr << "No coefficients" << '\n';
+        }
+        
     };
     // This loop populates the complete_prototypes_ vector
     for (const auto& prototype: prototypes)

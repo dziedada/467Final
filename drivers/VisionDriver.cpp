@@ -226,8 +226,8 @@ void CameraWrapper::run_camera(CameraWrapper* self)
         // thread(CameraWrapper::add_framerate_sample, utime, self).detach();
         thread(CameraWrapper::detect_balls, rgb, unordered_cloud, ordered_cloud, utime, 
             self).detach();
-        thread(CameraWrapper::calibration, rgb, unordered_cloud, ordered_cloud, 
-            self).detach();
+        // thread(CameraWrapper::calibration, rgb, unordered_cloud, ordered_cloud, 
+        //    self).detach();
     }
 }
 
@@ -277,7 +277,6 @@ void CameraWrapper::detect_balls(const Mat rgb, const PointCloud<PointXYZ>::Ptr 
     // Actual ball detection
     ball_detections_t message = self->ball_detector_.detect(rgb, unordered_cloud, ordered_cloud);
     message.utime = utime;
-    /*
     auto profile = [&]()
     {
         int64_t completion_time = std::chrono::duration_cast<std::chrono::microseconds>(
@@ -287,7 +286,6 @@ void CameraWrapper::detect_balls(const Mat rgb, const PointCloud<PointXYZ>::Ptr 
         cerr << "num detections: " << message.num_detections << '\n';
     };
     profile();
-    */
 
     self->zcm_ptr_->publish(channel::BALL_DETECTIONS, &message);
     self->ball_detection_running_ = false;

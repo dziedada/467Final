@@ -119,6 +119,16 @@ private:
 void Calibrator::compute_extrinsics()
 {
     computed_extrinsics_ = true;
+    if (green_ball_detections_.size() == 0 ||
+        orange_ball_detections_.size() == 0 ||
+        plane_coefficients_.size() == 0)
+    {
+        cout << "Calibration failed..." << '\n';
+        cout << "green ball detections: " << green_ball_detections_.size() << '\n';
+        cout << "orange ball detections: " << orange_ball_detections_.size() << '\n';
+        cout << "plane coefficients: " << plane_coefficients_.size() << '\n';
+        return;
+    }
     // Average the ball detections (to reduce the effect of camera depth noise)
     // Bin Centroids and then only keep the one with the highest number of detections
     auto bin_size_greater = [](const shared_ptr<Bin> &l, const shared_ptr<Bin>& r)
