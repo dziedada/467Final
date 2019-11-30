@@ -44,7 +44,8 @@ Calibrator::Calibrator(const YAML::Node& config) :
     num_samples_needed_ {config["num_samples_required"].as<int>()},
     current_num_samples_ {0},
     detector_ {BallDetector(config["min_ball_radius"].as<float>(),
-                            config["max_ball_radius"].as<float>())}
+                            config["max_ball_radius"].as<float>())},
+    current_num_iterations_ {0}
 {
     plane_coefficients_.reserve(static_cast<size_t>(num_samples_needed_));
     green_ball_detections_.reserve(static_cast<size_t>(num_samples_needed_));
@@ -57,7 +58,7 @@ void Calibrator::add_sample(cv::Mat rgb,
     pcl::PointCloud<pcl::PointXYZ>::Ptr unordered_cloud)
 {
     if (computed_extrinsics_) return;
-    ++current_num_samples_;
+    ++current_num_iterations_;
     ball_detections_t detections = detector_.detect(rgb, unordered_cloud, ordered_cloud);
     for (const ball_detection_t& detection : detections.detections)
     {
@@ -66,7 +67,11 @@ void Calibrator::add_sample(cv::Mat rgb,
     }
     MatrixXf coefs = detector_.fitPlane(unordered_cloud);
     if (coefs.size() != 0) plane_coefficients_.push_back(coefs);
+    current_num_samples_ = std::min(plane_coefficients_.size(), 
+        std::min(green_ball_detections_.size(), orange_ball_detections_.size()));
     if (current_num_samples_ == num_samples_needed_) compute_extrinsics();
+    if (current_num_iterations_ > 3 * num_samples_needed_) 
+        cerr << "at > 3 * num_samples_needed iterations, something may be wrong...\n";
 }
 
 class Bin

@@ -22,6 +22,7 @@ private:
     int num_samples_needed_;
     int current_num_samples_;
     BallDetector detector_;
+    int current_num_iterations_;
     bool computed_extrinsics_ = false;
     std::vector<Eigen::MatrixXf> plane_coefficients_;
     std::vector<ball_detection_t> green_ball_detections_;

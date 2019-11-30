@@ -69,18 +69,29 @@ PointXYZ operator/(const PointXYZ& l, const float div)
     return result;
 }
 
+/* Start Ball Prototype Section **************************************** */
+
 class BallPrototype
 {
 public:
-    BallPrototype(color::Color color_in) : color_ {color_in}, cloud_ {new PointCloud<PointXYZ>()} {}
+    BallPrototype(color::Color color_in) : color_ {color_in}, centroid_ {PointXYZ()},
+        cloud_ {new PointCloud<PointXYZ>()} {}
     PointXYZ get_raw_centroid();
     float getRawDistToOther(BallPrototype& other);
     float getColoredDistToOther(BallPrototype& other);
     void assimilate(const BallPrototype& other);
+    void addElement(int x, int y, const PointXYZ& point);
+    int getPixelX();
+    int getPixelY();
+    const PointCloud<PointXYZ>::Ptr getCloud();
+    size_t size() const;
     color::Color color_;
-    PointCloud<PointXYZ>::Ptr cloud_;
     PointXYZ centroid_;
 private:
+    PointCloud<PointXYZ>::Ptr cloud_;
+    int64_t pixel_x_sum_ = 0;
+    int64_t pixel_y_sum_ = 0;
+    size_t num_pixels_ = 0;
     bool has_raw_centroid_ = false;
     PointXYZ raw_centroid_;
 };
@@ -117,7 +128,40 @@ void BallPrototype::assimilate(const BallPrototype& other)
     {
         cloud_->push_back(point);
     }
+    pixel_x_sum_ += other.pixel_x_sum_;
+    pixel_y_sum_ += other.pixel_y_sum_;
+    num_pixels_  += other.num_pixels_;
 }
+
+void BallPrototype::addElement(int x, int y, const PointXYZ& point)
+{
+    ++num_pixels_;
+    pixel_x_sum_ += x;
+    pixel_y_sum_ += y;
+    cloud_->push_back(point);
+}
+
+int BallPrototype::getPixelX()
+{
+    return pixel_x_sum_ / num_pixels_;
+}
+
+int BallPrototype::getPixelY()
+{
+    return pixel_y_sum_ / num_pixels_;
+}
+
+const PointCloud<PointXYZ>::Ptr BallPrototype::getCloud()
+{
+    return cloud_;
+}
+
+size_t BallPrototype::size() const
+{
+    return num_pixels_;
+}
+
+// END BALL PROTOTYPE SECTION **********************************************************
 
 BallDetector::BallDetector(bool debug) : 
     min_radius_ {BALL_RADIUS_MIN}, max_radius_ {BALL_RADIUS_MAX}, debug_ {debug} {}
@@ -168,25 +212,6 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     cv::erode(orange_mask, orange_mask, EROSION_KERNEL);
     cv::dilate(orange_mask, orange_mask, DILATION_KERNEL);
     cv::erode(orange_mask, orange_mask, EROSION_KERNEL_2);
-    auto visualize = [&]() 
-    {
-        cv::namedWindow("Masked", cv::WINDOW_AUTOSIZE);
-        cv::namedWindow("Green Masked", cv::WINDOW_AUTOSIZE);
-        cv::namedWindow("Orange Masked", cv::WINDOW_AUTOSIZE);
-        cv::namedWindow("Green Final", cv::WINDOW_AUTOSIZE);
-        cv::namedWindow("Orange Final", cv::WINDOW_AUTOSIZE);
-        Mat green_vis;
-        Mat orange_vis;
-        cv::threshold(green_mask, green_vis, 0.0, 254.0, cv::THRESH_BINARY);
-        cv::threshold(orange_mask, orange_vis, 0.0, 254.0, cv::THRESH_BINARY);
-        imshow("Masked", masked);
-        imshow("Green Masked", green_masked);
-        imshow("Orange Masked", orange_masked);
-        imshow("Green Final", green_vis);
-        imshow("Orange Final", orange_vis);
-        cv::waitKey(0);
-    };
-    if (debug_) visualize();
     // Extract Detected masses of color and create BallPrototypes
     uint8_t curr_label = 2;
     vector<shared_ptr<BallPrototype> > prototypes;
@@ -201,14 +226,14 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
                 {
                     cv::floodFill(mask, cv::Point(x, y), cv::Scalar(curr_label));
                     prototypes.emplace_back(new BallPrototype(ball_color));
-                    prototypes[getPrototypeIndex(curr_label)]->cloud_->push_back(
-                        ordered_cloud->operator()(x, y));
+                    prototypes[getPrototypeIndex(curr_label)]->
+                        addElement(x, y, ordered_cloud->operator()(x, y));
                     ++curr_label;
                 }
                 else if (ptr[x] != 0)
                 {
-                    prototypes[getPrototypeIndex(ptr[x])]->cloud_->push_back(
-                        ordered_cloud->operator()(x, y));
+                    prototypes[getPrototypeIndex(ptr[x])]->
+                        addElement(x, y, ordered_cloud->operator()(x, y));
                 }
             }
         }
@@ -233,6 +258,33 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
         detections.detections.back().position[2] = prototype->centroid_.z;
     }
     detections.num_detections = detections.detections.size();
+    auto visualize = [&]() 
+    {
+        cv::namedWindow("Masked", cv::WINDOW_AUTOSIZE);
+        cv::namedWindow("Green Masked", cv::WINDOW_AUTOSIZE);
+        cv::namedWindow("Orange Masked", cv::WINDOW_AUTOSIZE);
+        cv::namedWindow("Green Final", cv::WINDOW_AUTOSIZE);
+        cv::namedWindow("Orange Final", cv::WINDOW_AUTOSIZE);
+        cv::namedWindow("Detections", cv::WINDOW_AUTOSIZE);
+        Mat green_vis;
+        Mat orange_vis;
+        cv::threshold(green_mask, green_vis, 0.0, 254.0, cv::THRESH_BINARY);
+        cv::threshold(orange_mask, orange_vis, 0.0, 254.0, cv::THRESH_BINARY);
+        Mat detection_image = rgb.clone();
+        for (auto& prototype : complete_prototypes)
+        {
+            cv::circle(detection_image, cv::Point(prototype->getPixelX(), prototype->getPixelY()),
+                15, cv::Scalar(50, 100, 250), cv::FILLED);
+        }
+        imshow("Masked", masked);
+        imshow("Green Masked", green_masked);
+        imshow("Orange Masked", orange_masked);
+        imshow("Green Final", green_vis);
+        imshow("Orange Final", orange_vis);
+        imshow("Detections", detection_image);
+        cv::waitKey(0);
+    };
+    if (debug_) visualize();
     return detections;
 }
 
@@ -245,7 +297,7 @@ vector<shared_ptr<BallPrototype> > prunePrototypes(
     std::sort(prototypes.begin(), prototypes.end(), 
         [](const shared_ptr<BallPrototype>& l, const shared_ptr<BallPrototype>& r)
         {
-            return l->cloud_->size() > r->cloud_->size();
+            return l->size() > r->size();
         });
     // Perform the selective keeping which performs the pruning
     vector<shared_ptr<BallPrototype> > processed_prototypes;
@@ -301,9 +353,9 @@ vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallProtot
     vector<shared_ptr<BallPrototype> > complete_prototypes_;
     auto fitSphere = [&](const shared_ptr<BallPrototype>& prototype)
     {
-        if (!prototype->cloud_->size()) {cerr << "empty cloud...\n"; return;}
-        const double inlier_thresh_ = 0.02;
-        const double NECESSARY_INLIER_PROPORTION = 0.6;
+        if (!prototype->size()) {cerr << "empty cloud...\n"; return;}
+        const double inlier_thresh_ = 0.04;
+        // const double NECESSARY_INLIER_PROPORTION = 0.1;
         // Set up pcl plane segmentation data
         pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
@@ -320,16 +372,19 @@ vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallProtot
         // Old distanceThreshold at 0.3
         segs.setOptimizeCoefficients(true);
         // Set the cloud to use for plane fitting
-        segs.setInputCloud(prototype->cloud_);
+        segs.setInputCloud(prototype->getCloud());
         // Beginning planar segmentation
         segs.segment(*inliers, *coefficients);
         // Check to see if a model was found
         // If no model found, return failure
-        if (inliers->indices.size() < (NECESSARY_INLIER_PROPORTION * prototype->cloud_->size()))
+        /*
+        // The issue with this is that even the real detections have very low inlier proportion...
+        if (inliers->indices.size() < (NECESSARY_INLIER_PROPORTION * prototype->size()))
         {
             if (detector.debug_) cerr << "Not enough inliers" << '\n'; // TODO DEBUG
             return;
         }
+        */
         if (coefficients->values.size())
         {
             complete_prototypes_.push_back(prototype);
@@ -404,8 +459,8 @@ ball_detections_t failure()
 
 MatrixXf BallDetector::fitPlane(PointCloud<PointXYZ>::Ptr cloud)
 {
-    const double inlier_thresh_ = 0.4;
-    const double NECESSARY_INLIER_PROPORTION = 0.7;
+    const double inlier_thresh_ = 0.07;
+    const double NECESSARY_INLIER_PROPORTION = 0.5;
     // Set up pcl plane segmentation data
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
@@ -417,7 +472,6 @@ MatrixXf BallDetector::fitPlane(PointCloud<PointXYZ>::Ptr cloud)
     segs.setModelType(pcl::SACMODEL_PLANE);
     segs.setMethodType(pcl::SAC_RANSAC);
     segs.setDistanceThreshold(inlier_thresh_);
-    // Old distanceThreshold at 0.3
     segs.setInputCloud(cloud);
     segs.setOptimizeCoefficients(true);
     // Set the cloud to use for plane fitting

@@ -1,6 +1,6 @@
 #include <vision/core/utilities.hpp>
 #include <vision/core/RealsenseInterface.hpp>
-#include <vision/core/BallDetector.hpp>
+#include <vision/core/Calibrator.hpp>
 #include <common/messages/ball_detections_t.hpp>
 
 #include <opencv2/core.hpp>
@@ -73,7 +73,7 @@ int main(int argc, char**argv)
     YAML::Node config = YAML::LoadFile(config_file_path);
     // Create zcm instance
     RealsenseInterface camera(config["forward"]);
-    BallDetector ball_detector(true);
+    Calibrator calibrator(config["calibration"]);
     camera.disableAutoExposure();
     // Set up sighandler
     atomic_bool running;
@@ -96,18 +96,7 @@ int main(int argc, char**argv)
         Mat depth = camera.getDepth();
         PointCloud<PointXYZ>::Ptr unordered_cloud = camera.getPointCloudBasic();
         PointCloud<PointXYZ>::Ptr ordered_cloud = camera.getMappedPointCloud();
-        int64_t utime = camera.getUTime();
-
-        ball_detections_t message = ball_detector.detect(rgb, unordered_cloud, ordered_cloud);
-        auto profile = [&]()
-        {
-            int64_t completion_time = std::chrono::duration_cast<std::chrono::microseconds>(
-                        std::chrono::system_clock::now().time_since_epoch())
-                        .count();
-            cerr << "completion time: " << completion_time - utime << '\n';
-            cerr << "num detections: " << message.num_detections << '\n';
-        };
-        profile();
+        calibrator.add_sample(rgb, ordered_cloud, unordered_cloud);
     }
 }
 
