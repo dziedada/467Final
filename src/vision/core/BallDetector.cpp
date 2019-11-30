@@ -119,9 +119,13 @@ void BallPrototype::assimilate(const BallPrototype& other)
     }
 }
 
-BallDetector::BallDetector() : min_radius_ {BALL_RADIUS_MIN}, max_radius_ {BALL_RADIUS_MAX} {}
-BallDetector::BallDetector(float min_radius, float max_radius) : min_radius_ {min_radius}, 
-    max_radius_ {max_radius} {}
+BallDetector::BallDetector(bool debug) : 
+    min_radius_ {BALL_RADIUS_MIN}, max_radius_ {BALL_RADIUS_MAX}, debug_ {debug} {}
+BallDetector::BallDetector() : BallDetector(false) {}
+BallDetector::BallDetector(float min_radius, float max_radius, bool debug) 
+    : min_radius_ {min_radius}, max_radius_ {max_radius}, debug_ {debug} {}
+BallDetector::BallDetector(float min_radius, float max_radius) 
+    : BallDetector(min_radius, max_radius, false) {} 
 
 vector<shared_ptr<BallPrototype> > prunePrototypes(
     vector<shared_ptr<BallPrototype> >& prototypes,
@@ -142,14 +146,13 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     MatrixXf ground_plane = fitPlane(unordered_cloud);
     if (ground_plane.size() == 0)
     {
-        cerr << "No ground coefficients...\n";
+        if (debug_) cerr << "No ground coefficients...\n";
         return failure();
     }
     // Mask out the pixels corresponding to points outside of the height range
     Mat hsv;
     cv::cvtColor(rgb, hsv, cv::COLOR_BGR2HSV);
-    Mat masked = maskByHeight(hsv, ordered_cloud, ground_plane); // TODO Would be better to check
-    // For the height of each detected blob to avoid having to mask the entire image
+    Mat masked = maskByHeight(hsv, ordered_cloud, ground_plane);
     // Color Detection
     Mat green_masked;
     Mat orange_masked;
@@ -165,7 +168,6 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     cv::erode(orange_mask, orange_mask, EROSION_KERNEL);
     cv::dilate(orange_mask, orange_mask, DILATION_KERNEL);
     cv::erode(orange_mask, orange_mask, EROSION_KERNEL_2);
-    /* 
     auto visualize = [&]() 
     {
         cv::namedWindow("Masked", cv::WINDOW_AUTOSIZE);
@@ -184,8 +186,7 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
         imshow("Orange Final", orange_vis);
         cv::waitKey(0);
     };
-    visualize();
-    */
+    if (debug_) visualize();
     // Extract Detected masses of color and create BallPrototypes
     uint8_t curr_label = 2;
     vector<shared_ptr<BallPrototype> > prototypes;
@@ -326,7 +327,7 @@ vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallProtot
         // If no model found, return failure
         if (inliers->indices.size() < (NECESSARY_INLIER_PROPORTION * prototype->cloud_->size()))
         {
-            cerr << "Not enough inliers" << '\n'; // TODO DEBUG
+            if (detector.debug_) cerr << "Not enough inliers" << '\n'; // TODO DEBUG
             return;
         }
         if (coefficients->values.size())
@@ -338,7 +339,7 @@ vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallProtot
         }
         else
         {
-            cerr << "No coefficients" << '\n';
+            if (detector.debug_) cerr << "No coefficients" << '\n';
         }
         
     };

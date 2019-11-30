@@ -36,3 +36,18 @@ target_link_libraries(vision-driver
     common
     m
 )
+
+add_executable(ball-detector-testing BallDetectorTesting.cpp)
+
+target_link_libraries(ball-detector-testing
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+    ${ZCM_LIBRARIES}
+    ${YAMLCPP_LIBRARY}
+    CameraInterface
+    VisionUtils
+    BallDetector
+    Calibrator
+    common
+    m
+)
