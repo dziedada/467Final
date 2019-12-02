@@ -325,5 +325,11 @@ void Calibrator::compute_extrinsics()
     // TODO
     // Print out the results of the computations
     cout << "rotation matrix: "<< rotation_matrix << ", translation: " << translation << '\n';
+    cout << "Filtered Height: " << filtered_height << '\n';
+    cout << "Filtered Pitch: " << filtered_pitch << '\n';
+    cout << "Filtered Roll: " << filtered_roll << '\n';
+    cout << "Filtered Yaw: " << yaw_angle << '\n';
+    cout << "X_diff: " << x_diff << '\n';
+    cout << "Y_diff: " << y_diff << '\n';
 }
 
