@@ -80,11 +80,14 @@ class Rexarm():
         pass
 
     def set_positions(self, joint_angles, update_now = True):
-        self.clamp(joint_angles)
+        #print("before clamp:", joint_angles)
+        angles = self.clamp(joint_angles)
+        #print("after clamp: ", angles, joint_angles)
+        print(angles)
         for i,joint in enumerate(self.joints):
-            self.position[i] = joint_angles[i]
+            self.position[i] = angles[i]
             if(update_now):
-                joint.set_position(joint_angles[i], num_tries=self.num_tries)
+                joint.set_position(angles[i], num_tries=self.num_tries)
     
     def set_speeds_normalized_global(self, speed, update_now = True):
         for i,joint in enumerate(self.joints):
@@ -94,7 +97,8 @@ class Rexarm():
 
     def set_speeds_normalized(self, speeds, update_now = True):
         for i,joint in enumerate(self.joints):
-            self.speed[i] = speeds[i]
+            if i == 2:
+                self.speed[i] = -speeds[i]
             if(update_now):
                 joint.set_speed(speeds[i], num_tries=self.num_tries)
 

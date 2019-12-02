@@ -9,3 +9,4 @@ from .occupancy_grid_t import occupancy_grid_t
 from .pose_xyt_t import pose_xyt_t
 from .robot_path_t import robot_path_t
 from .ball_t import ball_t
+from .arm_path_t import arm_path_t
