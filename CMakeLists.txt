@@ -14,6 +14,7 @@ set(CMAKE_CXX_EXTENSIONS ON)
 # Add option to build modules
 option(BUILD_VISION "Build the vision system" ON)
 option(BUILD_TESTS "Build test cases" OFF)
+option(BUILD_HOUGH_CIRCLE "Build test cases" OFF)
 
 # Set all compiled libraries to be placed in software/lib
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)

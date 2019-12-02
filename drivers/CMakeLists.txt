@@ -67,17 +67,19 @@ target_link_libraries(calibration
     m
 )
 
-add_executable(hough-circle HoughCircleTest.cpp)
+if (BUILD_HOUGH_CIRCLE)
+    add_executable(hough-circle HoughCircleTest.cpp)
 
-target_link_libraries(hough-circle
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-    ${ZCM_LIBRARIES}
-    ${YAMLCPP_LIBRARY}
-    CameraInterface
-    VisionUtils
-    BallDetector
-    Calibrator
-    common
-    m
-)
+    target_link_libraries(hough-circle
+        ${OpenCV_LIBS}
+        ${PCL_LIBRARIES}
+        ${ZCM_LIBRARIES}
+        ${YAMLCPP_LIBRARY}
+        CameraInterface
+        VisionUtils
+        BallDetector
+        Calibrator
+        common
+        m
+    )
+endif()
