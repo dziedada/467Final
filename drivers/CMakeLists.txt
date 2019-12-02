@@ -31,5 +31,55 @@ target_link_libraries(vision-driver
     ${YAMLCPP_LIBRARY}
     CameraInterface
     VisionUtils
+    BallDetector
+    Calibrator
+    common
     m
 )
+
+add_executable(ball-detector-testing BallDetectorTesting.cpp)
+
+target_link_libraries(ball-detector-testing
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+    ${ZCM_LIBRARIES}
+    ${YAMLCPP_LIBRARY}
+    CameraInterface
+    VisionUtils
+    BallDetector
+    Calibrator
+    common
+    m
+)
+
+add_executable(calibration Calibration.cpp)
+
+target_link_libraries(calibration
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+    ${ZCM_LIBRARIES}
+    ${YAMLCPP_LIBRARY}
+    CameraInterface
+    VisionUtils
+    BallDetector
+    Calibrator
+    common
+    m
+)
+
+if (BUILD_HOUGH_CIRCLE)
+    add_executable(hough-circle HoughCircleTest.cpp)
+
+    target_link_libraries(hough-circle
+        ${OpenCV_LIBS}
+        ${PCL_LIBRARIES}
+        ${ZCM_LIBRARIES}
+        ${YAMLCPP_LIBRARY}
+        CameraInterface
+        VisionUtils
+        BallDetector
+        Calibrator
+        common
+        m
+    )
+endif()

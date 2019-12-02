@@ -5,6 +5,7 @@
 # Green: 817512071338
 # Purple: 819112072448
 # Orange: 819112070694
+# DZ's: 927522072204
 #
 # T265 Serial Numbers
 # 845412110102
@@ -13,8 +14,11 @@ forward:
   enabled: true
   width: 640
   height: 480
-  fps: 15                # 15, 30, or 60
-  serial: "819112070800" # 12 digit number on bottom of realsense camera
+  fps: 30                # 15, 30, or 60
+  serial: "819112070800" # 12 digit number on bottom of realsense camera Light blue
+  # serial: "739112061142" # 12 digit number on bottom of realsense camera D415
+  # serial: "819112072448" # 12 digit number on bottom of realsense camera Purple
+  # serial: "819112070694" # 12 digit number on bottom of realsense camera Orange
   publish_rgbd: true
   publish_pointcloud: true
   enable_autoexposure: false
@@ -41,11 +45,12 @@ forward:
   sim_translation: [0, 0, 0]
 
 downward:
-  enabled: true
+  enabled: false
   width: 640
   height: 480
   fps: 30                # 15, 30, or 60
   serial: "819112070694" # 12 digit number on bottom of realsense camera
+  # serial: "817512071338" # 12 digit number on bottom of realsense camera
   publish_rgbd: false
   publish_pointcloud: true
   enable_autoexposure: false
@@ -70,12 +75,11 @@ other-forward: # To accomodate the t265 in use with the other cameras
   width: 640
   height: 480
   fps: 30                # 15, 30, or 60
-  #serial: "909212110206" 
-  serial: "845412110102" # 12 digit number on bottom of realsense camera
+  serial: "927522072204" # 12 digit number on bottom of realsense camera
   publish_rgbd: false
-  publish_pointcloud: false
-  enable_autoexposure: true
-  publish_pose: true # tracking camera only
+  publish_pointcloud: true
+  enable_autoexposure: false
+  publish_pose: false # tracking camera only
   rotation: # 3x3 rotation matrix left to right first, then top to bottom
     - 1
     - 0
@@ -90,3 +94,16 @@ other-forward: # To accomodate the t265 in use with the other cameras
     - 0
     - 0
     - 0
+
+calibration:
+  num_samples_required: 100
+  green_ground_truth:
+    x: 0.758
+    y: -0.22
+    z: 0.021
+  orange_ground_truth:
+    x: 0.758
+    y: 0.22
+    z: 0.021
+  min_ball_radius: 0.011
+  max_ball_radius: 0.04

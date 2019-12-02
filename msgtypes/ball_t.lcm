@@ -1,0 +1,11 @@
+/**
+ * LCM type for tracked ball
+ */
+struct ball_t
+{
+	int8_t id;
+	int8_t color;
+	int64_t utime;
+	double position[2];
+	double velocity[2];
+}

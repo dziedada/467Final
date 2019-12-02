@@ -42,3 +42,18 @@ target_link_libraries(VisionUtils
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
 )
+
+add_library(BallDetector SHARED BallDetector.cpp)
+
+target_link_libraries(BallDetector
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+)
+
+add_library(Calibrator SHARED Calibrator.cpp)
+
+target_link_libraries(Calibrator
+    BallDetector
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+)
