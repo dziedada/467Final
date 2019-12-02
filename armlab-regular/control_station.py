@@ -190,9 +190,6 @@ class Gui(QMainWindow):
     def updateJointReadout(self, joints):
         self.ui.rdoutBaseJC.setText(str("%+.2f" % (joints[0]*R2D)))
         self.ui.rdoutShoulderJC.setText(str("%+.2f" % ((joints[1]*R2D))))
-        angle = joints[2] * R2D - 90
-        if angle < -180:
-            angle += 360
         self.ui.rdoutElbowJC.setText(str("%+.2f" % (joints[2]*R2D)))
         if(len(joints)>3):
             self.ui.rdoutWristJC.setText(str("%+.2f" % (joints[3]*R2D)))

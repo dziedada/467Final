@@ -49,6 +49,15 @@ class StateMachine():
         self.togo_lock.release()
         #print(msg.waypoints)
 
+    def arm_path_handler(self, channel, data):
+        msg = arm_path_t.decode(data)
+        self.togo_lock.acquire()
+        self.togo = copy.deepcopy(msg.waypoints)
+        if len(self.togo) >= 1:
+            self.next_state = "move"
+        self.togo_lock.release()
+        print(msg.waypoints)
+
     def set_next_state(self, state):
         self.next_state = state
 
