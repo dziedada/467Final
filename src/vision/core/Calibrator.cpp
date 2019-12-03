@@ -220,13 +220,19 @@ void Calibrator::compute_extrinsics()
         {
             return;
         }
-        float height = abs(coefs(2));
-        // assuming plane normal of camera is [0,0,1]
-        float xc = 0, yc = 0, zc = 1; // Camera
+        const float xc = 0, yc = 0, zc = 1; // Camera
         // Ground
-        float xg = coefs(0);
-        float yg = coefs(1);
-        float zg = coefs(2);
+        const float xg = coefs(0);
+        const float yg = coefs(1);
+        const float zg = coefs(2);
+        const float dg = coefs(3);
+        const float denominator = sqrt(yg * yg + 
+                                zg * zg +
+                                xg * xg +
+                                dg * dg);
+        float numerator = fabs(dg);
+        float height = numerator / denominator;
+        // assuming plane normal of camera is [0,0,1]
         // Computation
         float roll = acos(((xg * xc) + (zg * zc)) / sqrt((xg * xg) + (zg * zg)));
         float pitch = acos(((yg * yc) + (zg * zc)) / sqrt((yg * yg) + (zg * zg)));
@@ -286,14 +292,23 @@ void Calibrator::compute_extrinsics()
         Vector3f result(tran * 
             Vector3f(detection.position[0], detection.position[1], detection.position[2]));
         ball_detection_t transformed_detection;
-        for (size_t i = 0; i < 3; ++i) transformed_detection.position[i] = detection.position[i];
+        for (size_t i = 0; i < 3; ++i) transformed_detection.position[i] = result[i];
         transformed_detection.color = detection.color;
         transformed_detection.utime = detection.utime;
         return transformed_detection;
     };
     Matrix3f x_z_and_coord = coord_change * x_rot * z_rot;
+    cout << "previous green centroid: " << green_centroid.position[0] << ' ' 
+        << green_centroid.position[1] << ' ' << green_centroid.position[2] << '\n';
+    cout << "previous orange centroid: " << orange_centroid.position[0] << ' ' 
+        << orange_centroid.position[1] << ' ' << orange_centroid.position[2] << '\n';
+    cout << x_z_and_coord << '\n';
     green_centroid = linear_transform_ball(x_z_and_coord, green_centroid);
     orange_centroid = linear_transform_ball(x_z_and_coord, orange_centroid);
+    cout << "green centroid: " << green_centroid.position[0] << ' ' 
+        << green_centroid.position[1] << ' ' << green_centroid.position[2] << '\n';
+    cout << "orange centroid: " << orange_centroid.position[0] << ' ' 
+        << orange_centroid.position[1] << ' ' << orange_centroid.position[2] << '\n';
     // Compute the yaw using the angle of the line connecting the balls
     Vector3f connector = 
         Vector3f(green_centroid.position[0], green_centroid.position[1], 
@@ -321,8 +336,6 @@ void Calibrator::compute_extrinsics()
     Matrix3f rotation_matrix = yaw_rot * coord_change * x_rot * z_rot;
     // Create the translation vector
     Vector3f translation(x_diff, y_diff, filtered_height);
-    // Test the created rotation and translation on the balls and plane inliers
-    // TODO
     // Print out the results of the computations
     cout << "rotation matrix: "<< rotation_matrix << ", translation: " << translation << '\n';
     cout << "Filtered Height: " << filtered_height << '\n';
