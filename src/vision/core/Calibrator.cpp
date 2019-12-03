@@ -214,13 +214,17 @@ void Calibrator::compute_extrinsics()
     vector<float> heights; heights.reserve(num_samples_needed_);
     vector<float> rolls; rolls.reserve(num_samples_needed_);
     vector<float> pitches; pitches.reserve(num_samples_needed_);
-    auto extract_plane_data = [&](const MatrixXf& coefs)
+    auto extract_plane_data = [&](MatrixXf& coefs)
     {
         if (coefs(2) == 0.f)
         {
             return;
         }
         const float xc = 0, yc = 0, zc = 1; // Camera
+        // Flips the x and y axis so that the roll and pitch are correct
+        // TODO this is very dank...
+        coefs(0) *= -1;
+        coefs(1) *= -1;
         // Ground
         const float xg = coefs(0);
         const float yg = coefs(1);
