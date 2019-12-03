@@ -1,6 +1,7 @@
 #include <vision/core/utilities.hpp>
 #include <vision/core/RealsenseInterface.hpp>
 #include <vision/core/BallDetector.hpp>
+#include <vision/core/CloudTransformer.hpp>
 #include <common/messages/ball_detections_t.hpp>
 
 #include <opencv2/core.hpp>
@@ -73,6 +74,7 @@ int main(int argc, char**argv)
     YAML::Node config = YAML::LoadFile(config_file_path);
     // Create zcm instance
     RealsenseInterface camera(config["forward"]);
+    CloudTransformer transformer(config["forward"]);
     BallDetector ball_detector(true);
     camera.disableAutoExposure();
     // Set up sighandler
@@ -99,6 +101,7 @@ int main(int argc, char**argv)
         int64_t utime = camera.getUTime();
 
         ball_detections_t message = ball_detector.detect(rgb, unordered_cloud, ordered_cloud);
+
         auto profile = [&]()
         {
             int64_t completion_time = std::chrono::duration_cast<std::chrono::microseconds>(
@@ -106,6 +109,25 @@ int main(int argc, char**argv)
                         .count();
             cerr << "completion time: " << completion_time - utime << '\n';
             cerr << "num detections: " << message.num_detections << '\n';
+            cerr << "\t \t Pre Transformation: \n";
+            auto print_detection = [](const ball_detection_t& detection)
+            {
+                for (int i = 0; i < 3; ++i)
+                {
+                    cerr << detection.position[i] << ' ';
+                }
+                cerr << '\n';
+            };
+            for (const auto& detection : message.detections)
+            {
+                print_detection(detection);
+            }
+            cerr << "\t \t Post Transformation: \n";
+            for (const auto& detection : message.detections)
+            {
+                ball_detection_t transformed = transformer.transform(detection);
+                print_detection(transformed);
+            }
         };
         profile();
     }
