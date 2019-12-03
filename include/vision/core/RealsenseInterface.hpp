@@ -99,6 +99,7 @@ private:
     rs2::frameset frames_;
     rs2::frame rgb_frame_;
     rs2::frame depth_frame_;
+    rs2::frame unaligned_rgb_frame_;
     rs2::frame unaligned_depth_frame_;
     rs2::frame pose_frame_;
     rs2_intrinsics depth_intrinsics_;
