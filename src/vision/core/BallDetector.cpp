@@ -45,6 +45,8 @@ const cv::Scalar GREEN_MAX(71, 255, 255);
 const cv::Scalar ORANGE_MIN(0, 150, 30);
 const cv::Scalar ORANGE_MAX(23, 255, 255);
 
+const Mat FILL_KERNEL = cv::getStructuringElement(cv::MORPH_RECT,
+    cv::Size(3, 3));
 const Mat EROSION_KERNEL = cv::getStructuringElement(cv::MORPH_RECT,
     cv::Size(5, 5));
 const Mat DILATION_KERNEL = cv::getStructuringElement(cv::MORPH_RECT,
@@ -124,6 +126,7 @@ float BallPrototype::getColoredDistToOther(BallPrototype& other)
 
 void BallPrototype::assimilate(const BallPrototype& other)
 {
+    has_raw_centroid_ = false;
     for (const auto& point : *other.cloud_)
     {
         cloud_->push_back(point);
@@ -135,6 +138,7 @@ void BallPrototype::assimilate(const BallPrototype& other)
 
 void BallPrototype::addElement(int x, int y, const PointXYZ& point)
 {
+    has_raw_centroid_ = false;
     ++num_pixels_;
     pixel_x_sum_ += x;
     pixel_y_sum_ += y;
@@ -202,10 +206,18 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     Mat orange_masked;
     Mat green_mask;
     Mat orange_mask;
+
+    // Fill due to the holes from the new point clouds
     cv::inRange(masked, GREEN_MIN, GREEN_MAX, green_masked);
     cv::inRange(masked, ORANGE_MIN, ORANGE_MAX, orange_masked);
     cv::threshold(green_masked, green_mask, 0.0, 1.0, cv::THRESH_BINARY);
     cv::threshold(orange_masked, orange_mask, 0.0, 1.0, cv::THRESH_BINARY);
+
+    cv::dilate(green_mask, green_mask, FILL_KERNEL);
+    cv::erode(green_mask, green_mask, FILL_KERNEL);
+    cv::dilate(orange_mask, orange_mask, FILL_KERNEL);
+    cv::erode(orange_mask, orange_mask, FILL_KERNEL);
+
     cv::erode(green_mask, green_mask, EROSION_KERNEL);
     cv::dilate(green_mask, green_mask, DILATION_KERNEL);
     cv::erode(green_mask, green_mask, EROSION_KERNEL_2);
@@ -226,14 +238,20 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
                 {
                     cv::floodFill(mask, cv::Point(x, y), cv::Scalar(curr_label));
                     prototypes.emplace_back(new BallPrototype(ball_color));
-                    prototypes[getPrototypeIndex(curr_label)]->
-                        addElement(x, y, ordered_cloud->operator()(x, y));
+                    if (ordered_cloud->operator()(x, y).x != 0)
+                    {
+                        prototypes[getPrototypeIndex(curr_label)]->
+                            addElement(x, y, ordered_cloud->operator()(x, y));
+                    }
                     ++curr_label;
                 }
                 else if (ptr[x] != 0)
                 {
-                    prototypes[getPrototypeIndex(ptr[x])]->
-                        addElement(x, y, ordered_cloud->operator()(x, y));
+                    if (ordered_cloud->operator()(x, y).x != 0)
+                    {
+                        prototypes[getPrototypeIndex(ptr[x])]->
+                            addElement(x, y, ordered_cloud->operator()(x, y));
+                    }
                 }
             }
         }
@@ -256,6 +274,10 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
         detections.detections.back().position[0] = prototype->centroid_.x;
         detections.detections.back().position[1] = prototype->centroid_.y;
         detections.detections.back().position[2] = prototype->centroid_.z;
+
+        detections.detections.back().position[0] = prototype->get_raw_centroid().x;
+        detections.detections.back().position[1] = prototype->get_raw_centroid().y;
+        detections.detections.back().position[2] = prototype->get_raw_centroid().z;
     }
     detections.num_detections = detections.detections.size();
     auto visualize = [&]() 
@@ -460,7 +482,7 @@ ball_detections_t failure()
 MatrixXf BallDetector::fitPlane(PointCloud<PointXYZ>::Ptr cloud)
 {
     const double inlier_thresh_ = 0.07;
-    const double NECESSARY_INLIER_PROPORTION = 0.5;
+    const double NECESSARY_INLIER_PROPORTION = 0;
     // Set up pcl plane segmentation data
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
