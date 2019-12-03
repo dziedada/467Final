@@ -120,19 +120,20 @@ bool RealsenseInterface::loadNext()
         {
             auto processed = align_object_->process(frames_);
             unaligned_depth_frame_ = frames_.get_depth_frame();
+            unaligned_rgb_frame_ = frames_.get_color_frame();
 
             // Try to get the frames from processed
             rgb_frame_ = processed.first_or_default(RS2_STREAM_COLOR);
             depth_frame_ = processed.get_depth_frame();
-            if (rgb_frame_)
+            if (unaligned_rgb_frame_)
             {
                 color_image_ =
-                    static_cast<const uint16_t*>(rgb_frame_.get_data());
+                    static_cast<const uint16_t*>(unaligned_rgb_frame_.get_data());
             }
-            if (depth_frame_)
+            if (unaligned_depth_frame_)
             {
                 depth_image_ =
-                    static_cast<const uint16_t*>(depth_frame_.get_data());
+                    static_cast<const uint16_t*>(unaligned_depth_frame_.get_data());
             }
         }
         else
@@ -185,7 +186,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr RealsenseInterface::getMappedPointCloud() co
     *cloud = pcl::PointCloud<pcl::PointXYZ>(width_, height_, pcl::PointXYZ(0, 0, 0));
     rs2::pointcloud pc;
     rs2::points points;
-    pc.map_to(rgb_frame_);
+    pc.map_to(unaligned_rgb_frame_);
     points = pc.calculate(unaligned_depth_frame_);
     auto vertices = points.get_vertices();
     auto tex_coords = points.get_texture_coordinates();
