@@ -1,0 +1,58 @@
+#include <vision/core/CloudTransformer.hpp>
+
+#include <iostream>
+#include <Eigen/Core>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/common/transforms.h>
+
+using std::cout;
+using std::cerr;
+using std::endl;
+using Eigen::Matrix4f;
+using Eigen::Vector4f;
+using pcl::PointCloud;
+using pcl::PointXYZ;
+
+CloudTransformer::CloudTransformer(const YAML::Node& config)
+{
+    const YAML::Node& rotation = config["rotation"];
+    const YAML::Node& translation = config["translation"];
+    for (int y = 0; y < 3; ++y)
+    {
+        for (int x = 0; x < 3; ++x)
+        {
+            transform_matrix_(y, x) = rotation[x + y].as<float>();
+        }
+    }
+    for (int y = 0; y < 3; ++y)
+    {
+        transform_matrix_(y, 3) = translation[y].as<float>();
+    }
+    for (int x = 0; x < 3; ++x)
+    {
+        transform_matrix_(3, x) = 0;
+    }
+    transform_matrix_(3, 3) = 1;
+}
+
+PointXYZ CloudTransformer::transform(const PointXYZ& point)
+{
+    Vector4f vec(point.x, point.y, point.z, 1);
+    Vector4f result = transform_matrix_ * vec;
+    return PointXYZ(result[0], result[1], result[2]);
+}
+
+PointCloud<PointXYZ>::Ptr CloudTransformer::transform(PointCloud<PointXYZ>::Ptr cloud)
+{
+    PointCloud<PointXYZ>::Ptr output(new PointCloud<PointXYZ>());
+    pcl::transformPointCloud (*cloud, *output, transform_matrix_);
+    return output;
+}
+
+PointCloud<PointXYZ> CloudTransformer::transform(const PointCloud<PointXYZ>& cloud)
+{
+    PointCloud<PointXYZ> output;
+    pcl::transformPointCloud (cloud, output, transform_matrix_);
+    return output;
+}
