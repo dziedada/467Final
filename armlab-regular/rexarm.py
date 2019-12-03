@@ -50,14 +50,48 @@ class Rexarm():
 
         self.num_tries = 51200
 
-    def move_to_target_angles(self, angles):
-        for i in range(len(angles)):
-            self.position[i] = angles[i]
+    def get_relative_speeds(self, cur_angles, target_angles):
+        diffs = [abs(target_i - cur_i) for target_i, cur_i in zip(target_angles, cur_angles)]
+        diffs[0] = 0.0
+        # elbw need do clamping
+        a0 = cur_angles[2] * R2D
+        a1 = target_angles[2] * R2D
+        if a0 > -20 and a0 < 0:
+            if a1 < -160:
+                diffs[2] = - (a1 + 180 + 180 - a0) * D2R
+        elif a0 > 0:
+            if a1 < -160:
+                diffs[2] = - (180 - a0 + a1 + 180) * D2R
+        else:
+            if a1 > 0:
+                diffs[2] = - (180 - a1 + a0 + 180) * D2R
+            elif a1 > -20:
+                diffs[2] = - (a0 + 180 + 180 - a1) * D2R
+        print("from:", [i * R2D for i in cur_angles])
+        print("to:", [i * R2D for i in target_angles])
+        print("diff:", [i * R2D for i in diffs])
+        max_diff = max(np.max(diffs), abs(diffs[2]))
+        print(max_diff)
+        return [diff / max_diff for diff in diffs]
+
+
+    def move_to_target_angles(self, target_angles, speed_norm, initialize):
+        #print(self.joint_angles_fb)
+        if not initialize:
+            speeds = self.get_relative_speeds(self.joint_angles_fb, target_angles)
+        for i in range(len(target_angles)):
+            self.position[i] = target_angles[i]
             self.max_torque[i] = 1.0
+            """
+            467TODO:
+            set speed
+            """
+            #self.speed[i] = speeds[i] * speed_norm
+            self.speed[i] = 1.0
         self.send_commands()
 
     def initialize(self):
-        self.move_to_target_angles((-90.0 * D2R, 0.0 * D2R, 90.0 * D2R))
+        self.move_to_target_angles((-90.0 * D2R, 0.0 * D2R, 90.0 * D2R), 1.0, True)
         self.send_commands()
             
         if(self.gripper != 0):
@@ -97,8 +131,6 @@ class Rexarm():
 
     def set_speeds_normalized(self, speeds, update_now = True):
         for i,joint in enumerate(self.joints):
-            if i == 2:
-                self.speed[i] = -speeds[i]
             if(update_now):
                 joint.set_speed(speeds[i], num_tries=self.num_tries)
 

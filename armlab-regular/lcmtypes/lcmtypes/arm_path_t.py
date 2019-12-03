@@ -10,11 +10,12 @@ except ImportError:
 import struct
 
 class arm_path_t(object):
-    __slots__ = ["waypoints_num", "waypoints"]
+    __slots__ = ["waypoints_num", "waypoints", "speed"]
 
     def __init__(self):
         self.waypoints_num = 0
         self.waypoints = []
+        self.speed = 0.0
 
     def encode(self):
         buf = BytesIO()
@@ -26,6 +27,7 @@ class arm_path_t(object):
         buf.write(struct.pack(">i", self.waypoints_num))
         for i0 in range(self.waypoints_num):
             buf.write(struct.pack('>2d', *self.waypoints[i0][:2]))
+        buf.write(struct.pack(">d", self.speed))
 
     def decode(data):
         if hasattr(data, 'read'):
@@ -43,13 +45,14 @@ class arm_path_t(object):
         self.waypoints = []
         for i0 in range(self.waypoints_num):
             self.waypoints.append(struct.unpack('>2d', buf.read(16)))
+        self.speed = struct.unpack(">d", buf.read(8))[0]
         return self
     _decode_one = staticmethod(_decode_one)
 
     _hash = None
     def _get_hash_recursive(parents):
         if arm_path_t in parents: return 0
-        tmphash = (0x5a2d8651ee5b33) & 0xffffffffffffffff
+        tmphash = (0xb035843bfa4ee381) & 0xffffffffffffffff
         tmphash  = (((tmphash<<1)&0xffffffffffffffff)  + (tmphash>>63)) & 0xffffffffffffffff
         return tmphash
     _get_hash_recursive = staticmethod(_get_hash_recursive)
