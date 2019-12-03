@@ -23,20 +23,12 @@ forward:
   publish_pointcloud: true
   enable_autoexposure: false
   publish_pose: false # tracking camera only
-  rotation: # 3x3 rotation matrix left to right first, then top to bottom
-    - 1
-    - 0
-    - 0
-    - 0
-    - 1
-    - 0
-    - 0
-    - 0
-    - 1
-  translation: # 3x1 translation vector
-    - 0
-    - 0
-    - 0
+  rotation: [
+    0, 0, 1,
+    -1, 0, 0,
+    0, -1, 0
+  ] # 3x3 rotation matrix left to right first, then top to bottom
+  translation: [0, 0, 0] # 3x1 translation vector
   sim_rotation: [
     0, 0, 1,
     -1, 0, 0,
@@ -55,20 +47,12 @@ downward:
   publish_pointcloud: true
   enable_autoexposure: false
   publish_pose: false # tracking camera only
-  rotation: # 3x3 rotation matrix left to right first, then top to bottom
-    - 1
-    - 0
-    - 0
-    - 0
-    - 1
-    - 0
-    - 0
-    - 0
-    - 1
-  translation: # 3x1 translation vector
-    - 0
-    - 0
-    - 0
+  rotation: [
+    0, 0, 1,
+    -1, 0, 0,
+    0, -1, 0
+  ] # 3x3 rotation matrix left to right first, then top to bottom
+  translation: [0, 0, 0] # 3x1 translation vector
 
 other-forward: # To accomodate the t265 in use with the other cameras
   enabled: false
@@ -80,20 +64,12 @@ other-forward: # To accomodate the t265 in use with the other cameras
   publish_pointcloud: true
   enable_autoexposure: false
   publish_pose: false # tracking camera only
-  rotation: # 3x3 rotation matrix left to right first, then top to bottom
-    - 1
-    - 0
-    - 0
-    - 0
-    - 1
-    - 0
-    - 0
-    - 0
-    - 1
-  translation: # 3x1 translation vector
-    - 0
-    - 0
-    - 0
+  rotation: [
+    0, 0, 1,
+    -1, 0, 0,
+    0, -1, 0
+  ] # 3x3 rotation matrix left to right first, then top to bottom
+  translation: [0, 0, 0] # 3x1 translation vector
 
 calibration:
   num_samples_required: 100
