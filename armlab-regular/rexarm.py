@@ -48,7 +48,7 @@ class Rexarm():
         self.temp_fb = [0.0] * self.num_joints         # Celsius
         self.move_fb = [0] *  self.num_joints
 
-        self.num_tries = 51200
+        self.num_tries = 512
 
     def get_relative_speeds(self, cur_angles, target_angles):
         diffs = [abs(target_i - cur_i) for target_i, cur_i in zip(target_angles, cur_angles)]
@@ -79,6 +79,11 @@ class Rexarm():
         #print(self.joint_angles_fb)
         if not initialize:
             speeds = self.get_relative_speeds(self.joint_angles_fb, target_angles)
+            speeds[2] = -0.5
+        else:
+            speeds = [1.0] * len(target_angles)
+        #speeds[2] = abs(speeds[2])
+        print("speeds:", speeds)
         for i in range(len(target_angles)):
             self.position[i] = target_angles[i]
             self.max_torque[i] = 1.0
@@ -86,8 +91,8 @@ class Rexarm():
             467TODO:
             set speed
             """
-            #self.speed[i] = speeds[i] * speed_norm
-            self.speed[i] = 1.0
+            self.speed[i] = speeds[i] * speed_norm
+            #self.speed[i] = 1.0
         self.send_commands()
 
     def initialize(self):
@@ -117,7 +122,7 @@ class Rexarm():
         #print("before clamp:", joint_angles)
         angles = self.clamp(joint_angles)
         #print("after clamp: ", angles, joint_angles)
-        print(angles)
+        #print(angles)
         for i,joint in enumerate(self.joints):
             self.position[i] = angles[i]
             if(update_now):

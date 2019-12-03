@@ -40,9 +40,10 @@ def use_arm_path_t():
 
 def test():
 	msg = arm_path_t()
-	msg.speed = 1.0
+	msg.speed = 0.05
 	msg.waypoints_num = 1
 	msg.waypoints = [[0.1, 0.08]]
+	#msg.waypoints = [[0.1, 0.15]]
 	lc = lcm.LCM()
 	lc.publish("ARM_PATH", msg.encode())
 

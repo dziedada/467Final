@@ -49,7 +49,9 @@ class DXL_MX:
         self.type = "MX"
         self.port = port
         self.id = id
-        self.mode = self.get_mode()
+        self.set_mode(1)
+        #self.mode = self.get_mode()
+        print(self.mode)
         self.max_speed = 12.2595 #rad/s
 
     def set_mode(self,mode, num_tries = 5):
@@ -184,6 +186,7 @@ class DXL_MX:
             if(speed>0.0):
                 value = value + 1024
         retry = 0
+        print(value)
         while(retry < num_tries):
             dxl.write2ByteTxRx(self.port, PROTOCOL, self.id, ADDR_MOVING_SPEED, value)
             dcomm_result = dxl.getLastTxRxResult(self.port, PROTOCOL)
