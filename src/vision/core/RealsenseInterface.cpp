@@ -119,6 +119,7 @@ bool RealsenseInterface::loadNext()
         if (!publish_pos_)
         {
             auto processed = align_object_->process(frames_);
+            unaligned_depth_frame_ = frames_.get_depth_frame();
 
             // Try to get the frames from processed
             rgb_frame_ = processed.first_or_default(RS2_STREAM_COLOR);
@@ -182,25 +183,20 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr RealsenseInterface::getMappedPointCloud() co
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
     *cloud = pcl::PointCloud<pcl::PointXYZ>(width_, height_, pcl::PointXYZ(0, 0, 0));
-    for (int dy{0}; dy < depth_intrinsics_.height; ++dy)
+    rs2::pointcloud pc;
+    rs2::points points;
+    pc.map_to(rgb_frame_);
+    points = pc.calculate(unaligned_depth_frame_);
+    auto vertices = points.get_vertices();
+    auto tex_coords = points.get_texture_coordinates();
+    for (size_t i = 0; i < points.size(); ++i)
     {
-        for (int dx{0}; dx < depth_intrinsics_.width; ++dx)
-        {
-            // Retrieve depth value and map it to more "real" coordinates
-            uint16_t depth_value = depth_image_[(dy * depth_intrinsics_.width) + dx];
-            float depth_in_meters = depth_value * scale_;
-            // Skip over values with a depth of zero (not found depth)
-            if (depth_value == 0) continue;
-            // For mapping color to depth
-            // Map from pixel coordinates in the depth image to pixel
-            // coordinates in the color image
-            float depth_pixel[2] = {static_cast<float>(dx), static_cast<float>(dy)};
-            // Projects the depth value into 3-D space
-            float depth_point[3];
-            rs2_deproject_pixel_to_point(
-                depth_point, &depth_intrinsics_, depth_pixel, depth_in_meters);
-            cloud->at(dx, dy) = pcl::PointXYZ(depth_point[0], depth_point[1], depth_point[2]);
-        }
+        int rgb_x = tex_coords[i].u * width_;
+        int rgb_y = tex_coords[i].v * height_;
+        if (rgb_x < 0 || rgb_x >= width_) continue;
+        if (rgb_y < 0 || rgb_y >= height_) continue;
+        cloud->at(rgb_x, rgb_y) = 
+            pcl::PointXYZ(vertices[i].x, vertices[i].y, vertices[i].z);
     }
     return cloud;
 }
