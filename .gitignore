@@ -3,3 +3,7 @@ build
 lib
 bin
 thirdparty/opencv
+thirdparty/apriltags
+thirdparty/Qt5
+qt-*
+scripts/install
