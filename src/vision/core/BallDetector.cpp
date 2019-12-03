@@ -423,7 +423,7 @@ Mat maskByHeight(const Mat rgb, PointCloud<PointXYZ>::Ptr ordered_cloud,
     const double plane_d = ground_coefs(3);
     const double denominator = sqrt(plane_y * plane_y + 
                               plane_z * plane_z +
-                              plane_d * plane_d);
+                              plane_x * plane_x);
     for (size_t y = 0; y < ordered_cloud->height; ++y)
     {
         for (size_t x = 0; x < ordered_cloud->width; ++x)
