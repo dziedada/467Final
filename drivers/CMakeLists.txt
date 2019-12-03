@@ -48,6 +48,7 @@ target_link_libraries(ball-detector-testing
     VisionUtils
     BallDetector
     Calibrator
+    CloudTransformer
     common
     m
 )

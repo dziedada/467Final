@@ -22,7 +22,7 @@ CloudTransformer::CloudTransformer(const YAML::Node& config)
     {
         for (int x = 0; x < 3; ++x)
         {
-            transform_matrix_(y, x) = rotation[x + y].as<float>();
+            transform_matrix_(y, x) = rotation[x + y * 3].as<float>();
         }
     }
     for (int y = 0; y < 3; ++y)
@@ -56,3 +56,16 @@ PointCloud<PointXYZ> CloudTransformer::transform(const PointCloud<PointXYZ>& clo
     pcl::transformPointCloud (cloud, output, transform_matrix_);
     return output;
 }
+
+ball_detection_t CloudTransformer::transform(const ball_detection_t& detection)
+{
+    Vector4f vec(detection.position[0], detection.position[1], detection.position[2], 1);
+    Vector4f result = transform_matrix_ * vec;
+    ball_detection_t output;
+    for (int i = 0; i < 3; ++i)
+    {
+        output.position[i] = result[i];
+    }
+    return output;
+}
+
