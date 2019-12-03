@@ -23,6 +23,8 @@ class arm_path_t
 
         std::vector< std::vector< double > > waypoints;
 
+        double     speed;
+
     public:
         /**
          * Encode a message into binary form.
@@ -127,6 +129,9 @@ int arm_path_t::_encodeNoHash(void *buf, int offset, int maxlen) const
         if(tlen < 0) return tlen; else pos += tlen;
     }
 
+    tlen = __double_encode_array(buf, offset + pos, maxlen - pos, &this->speed, 1);
+    if(tlen < 0) return tlen; else pos += tlen;
+
     return pos;
 }
 
@@ -146,6 +151,9 @@ int arm_path_t::_decodeNoHash(const void *buf, int offset, int maxlen)
         }
     }
 
+    tlen = __double_decode_array(buf, offset + pos, maxlen - pos, &this->speed, 1);
+    if(tlen < 0) return tlen; else pos += tlen;
+
     return pos;
 }
 
@@ -154,12 +162,13 @@ int arm_path_t::_getEncodedSizeNoHash() const
     int enc_size = 0;
     enc_size += __int32_t_encoded_array_size(NULL, 1);
     enc_size += this->waypoints_num * __double_encoded_array_size(NULL, 2);
+    enc_size += __double_encoded_array_size(NULL, 1);
     return enc_size;
 }
 
 int64_t arm_path_t::_computeHash(const __lcm_hash_ptr *)
 {
-    int64_t hash = 0x005a2d8651ee5b33LL;
+    int64_t hash = 0xb035843bfa4ee381LL;
     return (hash<<1) + ((hash>>63)&1);
 }
 

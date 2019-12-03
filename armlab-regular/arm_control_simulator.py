@@ -26,6 +26,7 @@ def use_arm_path_t():
 	num = 10
 	inter = np.linspace(0.1, 0.16, num)
 	msg = arm_path_t()
+	msg.speed = 1.0
 	msg.waypoints_num = 1
 	msg.waypoints = [[0.1, inter[0]]]
 	lc = lcm.LCM()
@@ -39,6 +40,7 @@ def use_arm_path_t():
 
 def test():
 	msg = arm_path_t()
+	msg.speed = 1.0
 	msg.waypoints_num = 1
 	msg.waypoints = [[0.1, 0.08]]
 	lc = lcm.LCM()
@@ -46,7 +48,7 @@ def test():
 
 def main():
 	# use_ball_t()
-	# use_arm_path_t()
+	#use_arm_path_t()
 	test()
 	
 

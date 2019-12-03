@@ -22,6 +22,7 @@ class StateMachine():
         self.next_state = "idle"
         self.test = 0
         self.togo = []
+        self.speed_norm = 1.0
         self.togo_lock = threading.Lock()
         self.lc = lcm.LCM()
         lcmArmPathSub = self.lc.subscribe("ARM_PATH",
@@ -36,16 +37,17 @@ class StateMachine():
         if len(self.togo) >= 1:
             self.next_state = "move"
         self.togo_lock.release()
-        print(msg.position)
+        #print(msg.position)
 
     def arm_path_handler(self, channel, data):
         msg = arm_path_t.decode(data)
         self.togo_lock.acquire()
+        self.speed_norm = copy.deepcopy(msg.speed)
         self.togo = copy.deepcopy(msg.waypoints)
         if len(self.togo) >= 1:
             self.next_state = "move"
         self.togo_lock.release()
-        print(msg.waypoints)
+        #print(msg.waypoints)
 
     def set_next_state(self, state):
         self.next_state = state
@@ -121,47 +123,19 @@ class StateMachine():
                 #         anglse2[2] = 180
                 #         self.rexarm.move_to_target_angles(angles2)
                 # angles[2] = -angles[2] + 2 * (np.pi + angles[2])  
-                print(angles)
-                if angles[2] < -160 / 180 * np.pi:
-                    angles2 = copy.deepcopy(angles)
-                    angles2[2] = np.pi
-                    self.rexarm.move_to_target_angles(angles2)
-                else:
-                    self.rexarm.move_to_target_angles(angles)
+                #print(angles)
+                # if angles[2] < -160 / 180 * np.pi:
+                #     angles2 = copy.deepcopy(angles)
+                #     angles2[2] = np.pi
+                #     self.rexarm.move_to_target_angles(angles2)
+                # else:
+                self.rexarm.move_to_target_angles(angles, self.speed_norm, False)
         self.next_state = "idle"
         self.togo_lock.release()
+
     def idle(self):
         self.status_message = "State: Idle - Waiting for input"
         self.current_state = "idle"
-        self.test += 1
-        # if self.test == 20:
-        #     angles = IK((0.08, 0.1, 0))
-        #     print(angles)
-        #     self.rexarm.move_to_target_angles(angles)
-        # if self.test == 25:
-        #     angles = IK((0.08, 0.12, 0))
-        #     print(angles)
-        #     self.rexarm.move_to_target_angles(angles)
-        # if self.test == 26:
-        #     angles = IK((0.08, 0.13, 0))
-        #     print(angles)
-        #     self.rexarm.move_to_target_angles(angles)
-        # if self.test == 27:
-        #     angles = IK((0.08, 0.14, 0))
-        #     print(angles)
-        #     self.rexarm.move_to_target_angles(angles)
-        # if self.test == 28:
-        #     angles = IK((0.08, 0.15, 0))
-        #     print(angles)
-        #     self.rexarm.move_to_target_angles(angles)
-        # if self.test == 29:
-        #     angles = IK((0.08, 0.16, 0))
-        #     print(angles)
-        #     self.rexarm.move_to_target_angles(angles)
-        # if self.test == 30:
-        #     angles = IK((0.08, 0.17, 0))
-        #     print(angles)
-        #     self.rexarm.move_to_target_angles(angles)
         self.rexarm.get_feedback()
 
     def estop(self):

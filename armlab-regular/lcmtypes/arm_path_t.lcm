@@ -5,4 +5,5 @@ struct arm_path_t
 {
 	int32_t waypoints_num;
 	double waypoints[waypoints_num][2];
+	double speed;
 }

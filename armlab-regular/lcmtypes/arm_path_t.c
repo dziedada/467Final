@@ -21,8 +21,9 @@ int64_t __arm_path_t_hash_recursive(const __lcm_hash_ptr *p)
     cp.v = (void*)__arm_path_t_get_hash;
     (void) cp;
 
-    int64_t hash = (int64_t)0x005a2d8651ee5b33LL
+    int64_t hash = (int64_t)0xb035843bfa4ee381LL
          + __int32_t_hash_recursive(&cp)
+         + __double_hash_recursive(&cp)
          + __double_hash_recursive(&cp)
         ;
 
@@ -55,6 +56,9 @@ int __arm_path_t_encode_array(void *buf, int offset, int maxlen, const arm_path_
         }
         }
 
+        thislen = __double_encode_array(buf, offset + pos, maxlen - pos, &(p[element].speed), 1);
+        if (thislen < 0) return thislen; else pos += thislen;
+
     }
     return pos;
 }
@@ -86,6 +90,8 @@ int __arm_path_t_encoded_array_size(const arm_path_t *p, int elements)
         }
         }
 
+        size += __double_encoded_array_size(&(p[element].speed), 1);
+
     }
     return size;
 }
@@ -102,7 +108,7 @@ size_t arm_path_t_struct_size(void)
 
 int arm_path_t_num_fields(void)
 {
-    return 2;
+    return 3;
 }
 
 int arm_path_t_get_field(const arm_path_t *p, int i, lcm_field_t *f)
@@ -131,6 +137,15 @@ int arm_path_t_get_field(const arm_path_t *p, int i, lcm_field_t *f)
             f->dim_is_variable[0] = 1;
             f->dim_is_variable[1] = 0;
             f->data = (void *) &p->waypoints;
+            return 0;
+        }
+        
+        case 2: {
+            f->name = "speed";
+            f->type = LCM_FIELD_DOUBLE;
+            f->typestr = "double";
+            f->num_dim = 0;
+            f->data = (void *) &p->speed;
             return 0;
         }
         
@@ -174,6 +189,9 @@ int __arm_path_t_decode_array(const void *buf, int offset, int maxlen, arm_path_
         }
         }
 
+        thislen = __double_decode_array(buf, offset + pos, maxlen - pos, &(p[element].speed), 1);
+        if (thislen < 0) return thislen; else pos += thislen;
+
     }
     return pos;
 }
@@ -192,6 +210,8 @@ int __arm_path_t_decode_array_cleanup(arm_path_t *p, int elements)
         }
         }
         if (p[element].waypoints) free(p[element].waypoints);
+
+        __double_decode_array_cleanup(&(p[element].speed), 1);
 
     }
     return 0;
@@ -232,6 +252,8 @@ int __arm_path_t_clone_array(const arm_path_t *p, arm_path_t *q, int elements)
             __double_clone_array(p[element].waypoints[a], q[element].waypoints[a], 2);
         }
         }
+
+        __double_clone_array(&(p[element].speed), &(q[element].speed), 1);
 
     }
     return 0;
