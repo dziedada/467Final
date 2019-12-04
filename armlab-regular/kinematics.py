@@ -14,6 +14,9 @@ upperarm_len = 0.10
 R2D = 180.0/3.141592
 D2R = 3.141592/180.0
 
+angle_max = 120
+angle_min = -120
+
 def FK_dh(joint_angles, link):
     """
     TODO: implement this function
@@ -64,10 +67,8 @@ def FK_pox(joint_angles):
     pose = np.array([0.0, 0.0, 1.0])
     #print(joint_angles)
     for i in range(2, 0, -1):
-        if i == 1:
+        if i == 1 or i == 2:
             transform = calc_A_FK(0 - joint_angles[i], lens[i])
-        elif i == 2:
-            transform = calc_A_FK(math.pi / 2 - joint_angles[i], lens[i])
 
         pose = transform @ pose
 
@@ -125,15 +126,15 @@ def IK(pose):
     if x < 0:
         theta0 = -theta0
         theta1 = -theta1
-    theta1 += math.pi / 2
-    if theta1 > math.pi:
-        theta1 -= 2 * math.pi
+    # theta1 += math.pi / 2
+    # if theta1 > math.pi:
+    #     theta1 -= 2 * math.pi
     # print(A * R2D, B * R2D, theta0 * R2D, theta1 * R2D)    
     # check valid:
-    if theta0 > 110 * D2R or theta0 < -110 * D2R:
+    if theta0 > angle_max * D2R or theta0 < angle_min * D2R:
         print(pose, " is out of upperarm's reach")
         return None
-    if theta1 < -20 * D2R and theta1 > -160 * D2R:
+    if theta1 > angle_max * D2R and theta1 < angle_min * D2R:
         print(pose, " is out of forearm's reach")
         return None
     return [-math.pi / 2, theta0, theta1]

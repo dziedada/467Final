@@ -28,8 +28,8 @@ class Rexarm():
         467TODO: 
         Find the physical angle limits of the Rexarm. Remember to keep track of this if you include more motors
         """
-        angle_max = 110.0
-        angle_min = -110.0
+        angle_max = 120.0
+        angle_min = -120.0
         self.angle_limits = np.array(
             [[angle_min, angle_min, angle_min, angle_min, angle_min],
              [angle_max, angle_max, angle_max, angle_max, angle_max]],
@@ -54,24 +54,25 @@ class Rexarm():
         diffs = [abs(target_i - cur_i) for target_i, cur_i in zip(target_angles, cur_angles)]
         diffs[0] = 0.0
         # elbw need do clamping
-        a0 = cur_angles[2] * R2D
-        a1 = target_angles[2] * R2D
-        if a0 > -20 and a0 < 0:
-            if a1 < -160:
-                diffs[2] = - (a1 + 180 + 180 - a0) * D2R
-        elif a0 > 0:
-            if a1 < -160:
-                diffs[2] = - (180 - a0 + a1 + 180) * D2R
-        else:
-            if a1 > 0:
-                diffs[2] = - (180 - a1 + a0 + 180) * D2R
-            elif a1 > -20:
-                diffs[2] = - (a0 + 180 + 180 - a1) * D2R
-        print("from:", [i * R2D for i in cur_angles])
-        print("to:", [i * R2D for i in target_angles])
-        print("diff:", [i * R2D for i in diffs])
-        max_diff = max(np.max(diffs), abs(diffs[2]))
-        print(max_diff)
+        # a0 = cur_angles[2] * R2D
+        # a1 = target_angles[2] * R2D
+        # if a0 > -20 and a0 < 0:
+        #     if a1 < -160:
+        #         diffs[2] = - (a1 + 180 + 180 - a0) * D2R
+        # elif a0 > 0:
+        #     if a1 < -160:
+        #         diffs[2] = - (180 - a0 + a1 + 180) * D2R
+        # else:
+        #     if a1 > 0:
+        #         diffs[2] = - (180 - a1 + a0 + 180) * D2R
+        #     elif a1 > -20:
+        #         diffs[2] = - (a0 + 180 + 180 - a1) * D2R
+        # print("from:", [i * R2D for i in cur_angles])
+        # print("to:", [i * R2D for i in target_angles])
+        # print("diff:", [i * R2D for i in diffs])
+        # max_diff = max(np.max(diffs), abs(diffs[2]))
+        # print(max_diff)
+        max_diff = np.max(diffs)
         return [diff / max_diff for diff in diffs]
 
 
@@ -79,11 +80,10 @@ class Rexarm():
         #print(self.joint_angles_fb)
         if not initialize:
             speeds = self.get_relative_speeds(self.joint_angles_fb, target_angles)
-            speeds[2] = -0.5
         else:
             speeds = [1.0] * len(target_angles)
-        #speeds[2] = abs(speeds[2])
-        print("speeds:", speeds)
+        # speeds[2] = abs(speeds[2])
+        # print("speeds:", speeds)
         for i in range(len(target_angles)):
             self.position[i] = target_angles[i]
             self.max_torque[i] = 1.0
@@ -96,7 +96,7 @@ class Rexarm():
         self.send_commands()
 
     def initialize(self):
-        self.move_to_target_angles((-90.0 * D2R, 0.0 * D2R, 90.0 * D2R), 1.0, True)
+        self.move_to_target_angles((-90.0 * D2R, 0.0 * D2R, 0.0 * D2R, 0.0 * D2R), 1.0, True)
         self.send_commands()
             
         if(self.gripper != 0):
@@ -211,12 +211,12 @@ class Rexarm():
         clipped_angle = np.clip(joint_angles, self.angle_limits[0][:len(joint_angles)],
                        self.angle_limits[1][:len(joint_angles)])
         # for elbow, should -90 then do clipping
-        elbow = joint_angles[2] - math.pi / 2
-        if elbow < -math.pi:
-            elbow += 2 * math.pi
-        clipped_angle[2] = np.clip([elbow], self.angle_limits[0][2], self.angle_limits[1][2])[0] + math.pi / 2
-        if clipped_angle[2] > math.pi:
-            clipped_angle[2] -= 2 * math.pi
+        # elbow = joint_angles[2] - math.pi / 2
+        # if elbow < -math.pi:
+        #     elbow += 2 * math.pi
+        # clipped_angle[2] = np.clip([elbow], self.angle_limits[0][2], self.angle_limits[1][2])[0] + math.pi / 2
+        # if clipped_angle[2] > math.pi:
+        #     clipped_angle[2] -= 2 * math.pi
         return clipped_angle    
 
 

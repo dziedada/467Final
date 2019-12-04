@@ -23,34 +23,37 @@ def use_ball_t():
 		time.sleep(1)
 
 def use_arm_path_t():
-	num = 10
-	inter = np.linspace(0.1, 0.16, num)
+	num = 2
+	inter = np.linspace(0.05, 0.16, num)
 	msg = arm_path_t()
-	msg.speed = 1.0
+	msg.speed = 1
 	msg.waypoints_num = 1
-	msg.waypoints = [[0.1, inter[0]]]
+	#msg.waypoints = [[0.1, inter[0]]]
+	msg.waypoints = [[0.1, 0.06]]
 	lc = lcm.LCM()
 	lc.publish("ARM_PATH", msg.encode())
-	time.sleep(1)
+	time.sleep(3)
 	msg.waypoints_num = num - 1
 	msg.waypoints = []
 	for i in range(1, num):
 		msg.waypoints.append([0.1, inter[i]])
+	msg.waypoints = [[0.08, 0.15]]
 	lc.publish("ARM_PATH", msg.encode())
 
 def test():
 	msg = arm_path_t()
-	msg.speed = 0.05
+	msg.speed = 1
 	msg.waypoints_num = 1
-	msg.waypoints = [[0.1, 0.08]]
-	#msg.waypoints = [[0.1, 0.15]]
+	#msg.waypoints = [[-0.1, 0.1]]
+	#msg.waypoints = [[0.1, 0.08]]
+	msg.waypoints = [[0.19, 0.01]]
 	lc = lcm.LCM()
 	lc.publish("ARM_PATH", msg.encode())
 
 def main():
 	# use_ball_t()
-	#use_arm_path_t()
-	test()
+	use_arm_path_t()
+	#test()
 	
 
 if __name__ == '__main__':

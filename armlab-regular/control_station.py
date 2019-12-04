@@ -118,13 +118,13 @@ class Gui(QMainWindow):
         base = DXL_MX(port_num, 1)
         shld = DXL_MX(port_num, 2)
         elbw = DXL_MX(port_num, 3)
-        # wrst = DXL_AX(port_num, 4)
+        wrst = DXL_AX(port_num, 4)
         #wrst2 = DXL_AX(port_num, 1)
 
         """Objects Using Other Classes"""
         self.kinect = None #Kinect()
         #self.rexarm = Rexarm((base,shld,elbw,wrst,wrst2),0)
-        self.rexarm = Rexarm((base,shld,elbw),0)
+        self.rexarm = Rexarm((base,shld,elbw, wrst),0)
         self.tp = TrajectoryPlanner(self.rexarm)
         self.sm = StateMachine(self.rexarm, self.tp, self.kinect)
     
