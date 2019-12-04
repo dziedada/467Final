@@ -234,7 +234,8 @@ void Calibrator::compute_extrinsics()
         float height = numerator / denominator;
         // assuming plane normal of camera is [0,0,1]
         // Computation
-        float roll = acos(((xg * xc) + (zg * zc)) / sqrt((xg * xg) + (zg * zg)));
+        // float roll = acos(((xg * xc) + (zg * zc)) / sqrt((xg * xg) + (zg * zg)));
+        float roll = asin(xg + xc); // + xc is to avoid werror
         float pitch = acos(((yg * yc) + (zg * zc)) / sqrt((yg * yg) + (zg * zg)));
         if (yg < 0) pitch *= -1;
         if (xg < 0) roll *= -1;
@@ -270,13 +271,14 @@ void Calibrator::compute_extrinsics()
     Matrix3f coord_change; // Changes to world coordinate frame without extrinsics
     Matrix3f yaw_rot; // yaw fix
     // Set pitch fix matrix
-    float pitch_fix = -(PI / 2) - filtered_pitch;
+    float pitch_fix = -filtered_pitch;
     float x_angle = -1 * pitch_fix;
     x_rot(0, 0) = 1; x_rot(0, 1) = 0; x_rot(0, 2) = 0;
     x_rot(1, 0) = 0; x_rot(1, 1) = cos(x_angle); x_rot(1, 2) = -sin(x_angle);
     x_rot(2, 0) = 0; x_rot(2, 1) = sin(x_angle); x_rot(2, 2) = cos(x_angle);
     // Set roll fix matrix
-    float roll_fix = -filtered_roll - PI;
+    float roll_fix = filtered_roll;
+    cout << "roll fix: " << roll_fix << '\n';
     float z_angle = -1 * roll_fix;
     z_rot(0, 0) = cos(z_angle); z_rot(0, 1) = -sin(z_angle); z_rot(0, 2) = 0;
     z_rot(1, 0) = sin(z_angle); z_rot(1, 1) = cos(z_angle); z_rot(1, 2) = 0;
@@ -285,6 +287,10 @@ void Calibrator::compute_extrinsics()
     coord_change(0, 0) = 0; coord_change(0, 1) = 0; coord_change(0, 2) = 1;
     coord_change(1, 0) = 1; coord_change(1, 1) = 0; coord_change(1, 2) = 0;
     coord_change(2, 0) = 0; coord_change(2, 1) = 1; coord_change(2, 2) = 0;
+    Matrix3f coord_change2;
+    coord_change2(0, 0) = 0; coord_change2(0, 1) = 0; coord_change2(0, 2) = 1;
+    coord_change2(1, 0) = 0; coord_change2(1, 1) = 1; coord_change2(1, 2) = 0;
+    coord_change2(2, 0) = 1; coord_change2(2, 1) = 0; coord_change2(2, 2) = 0;
     // Adjust the detected positions of the balls
     auto linear_transform_ball = [](const Matrix3f& tran, const ball_detection_t& detection)
     {
@@ -297,12 +303,23 @@ void Calibrator::compute_extrinsics()
         transformed_detection.utime = detection.utime;
         return transformed_detection;
     };
-    Matrix3f x_z_and_coord = coord_change * x_rot * z_rot;
+    auto translate_ball = [](const Vector3f& translation, ball_detection_t& detection)
+    {
+        ball_detection_t result = detection;
+        for (size_t i = 0; i < 3; ++i)
+        {
+            result.position[i] = detection.position[i] + translation[i];
+        }
+        return result;
+    };
+    Matrix3f x_z_and_coord = coord_change2 * coord_change * x_rot * z_rot;
     cout << "previous green centroid: " << green_centroid.position[0] << ' ' 
         << green_centroid.position[1] << ' ' << green_centroid.position[2] << '\n';
     cout << "previous orange centroid: " << orange_centroid.position[0] << ' ' 
         << orange_centroid.position[1] << ' ' << orange_centroid.position[2] << '\n';
     cout << x_z_and_coord << '\n';
+    ball_detection_t original_green_centroid = green_centroid;
+    ball_detection_t original_orange_centroid = orange_centroid;
     green_centroid = linear_transform_ball(x_z_and_coord, green_centroid);
     orange_centroid = linear_transform_ball(x_z_and_coord, orange_centroid);
     cout << "green centroid: " << green_centroid.position[0] << ' ' 
@@ -316,7 +333,7 @@ void Calibrator::compute_extrinsics()
         Vector3f(orange_centroid.position[0], orange_centroid.position[1],
             orange_ball_ground_truth_[2]);
     float connector_angle = atan2(connector[0], connector[1]);
-    float yaw_angle = -1 * connector_angle;
+    float yaw_angle = 1 * connector_angle;
     yaw_rot(0, 0) = cos(yaw_angle); yaw_rot(0, 1) = -sin(yaw_angle); yaw_rot(0, 2) = 0;
     yaw_rot(1, 0) = sin(yaw_angle); yaw_rot(1, 1) = cos(yaw_angle); yaw_rot(1, 2) = 0;
     yaw_rot(2, 0) = 0; yaw_rot(2, 1) = 0; yaw_rot(2, 2) = 1;
@@ -333,10 +350,16 @@ void Calibrator::compute_extrinsics()
         (orange_ball_ground_truth_[1] - orange_centroid.position[1])
         ) / 2;
     // Create the rotation matrix
-    Matrix3f rotation_matrix = yaw_rot * coord_change * x_rot * z_rot;
+    Matrix3f rotation_matrix = yaw_rot * x_z_and_coord;
     // Create the translation vector
     Vector3f translation(x_diff, y_diff, filtered_height);
     // Print out the results of the computations
+    ball_detection_t transformed_green = linear_transform_ball(rotation_matrix, 
+        original_green_centroid);
+    ball_detection_t transformed_orange = linear_transform_ball(rotation_matrix, 
+        original_orange_centroid);
+    transformed_green = translate_ball(translation, transformed_green);
+    transformed_orange = translate_ball(translation, transformed_orange);
     cout << "rotation matrix: "<< rotation_matrix << ", translation: " << translation << '\n';
     cout << "Filtered Height: " << filtered_height << '\n';
     cout << "Filtered Pitch: " << filtered_pitch << '\n';
@@ -344,5 +367,9 @@ void Calibrator::compute_extrinsics()
     cout << "Filtered Yaw: " << yaw_angle << '\n';
     cout << "X_diff: " << x_diff << '\n';
     cout << "Y_diff: " << y_diff << '\n';
+    cout << "transformed green centroid: " << transformed_green.position[0] << ' ' 
+        << transformed_green.position[1] << ' ' << transformed_green.position[2] << '\n';
+    cout << "transformed orange centroid: " << transformed_orange.position[0] << ' ' 
+        << transformed_orange.position[1] << ' ' << transformed_orange.position[2] << '\n';
 }
 
