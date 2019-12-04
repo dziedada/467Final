@@ -24,11 +24,11 @@ forward:
   enable_autoexposure: false
   publish_pose: false # tracking camera only
   rotation: [
-    1, 0, 0,
-    0, 1, 0,
-    0, 0, 1 
+    -0.0127659, -0.189138, 0.981868,
+    0.999185, 0.035204, 0.0197724,
+    0.0383054, -0.981319, -0.188534
   ] # 3x3 rotation matrix left to right first, then top to bottom
-  translation: [0, 0, 0] # 3x1 translation vector
+  translation: [-0.333792, -0.0114152, 0.356817] # 3x1 translation vector
 
 downward:
   enabled: false
@@ -69,11 +69,11 @@ calibration:
   num_samples_required: 100
   green_ground_truth:
     x: 0.758
-    y: -0.22
+    y: 0.22
     z: 0.021
   orange_ground_truth:
     x: 0.758
-    y: 0.22
+    y: -0.22
     z: 0.021
   min_ball_radius: 0.011
   max_ball_radius: 0.04
