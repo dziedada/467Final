@@ -221,10 +221,6 @@ void Calibrator::compute_extrinsics()
             return;
         }
         const float xc = 0, yc = 0, zc = 1; // Camera
-        // Flips the x and y axis so that the roll and pitch are correct
-        // TODO this is very dank...
-        coefs(0) *= -1;
-        coefs(1) *= -1;
         // Ground
         const float xg = coefs(0);
         const float yg = coefs(1);
@@ -274,13 +270,13 @@ void Calibrator::compute_extrinsics()
     Matrix3f coord_change; // Changes to world coordinate frame without extrinsics
     Matrix3f yaw_rot; // yaw fix
     // Set pitch fix matrix
-    float pitch_fix = (-PI / 2) - filtered_pitch;
+    float pitch_fix = -(PI / 2) - filtered_pitch;
     float x_angle = -1 * pitch_fix;
     x_rot(0, 0) = 1; x_rot(0, 1) = 0; x_rot(0, 2) = 0;
     x_rot(1, 0) = 0; x_rot(1, 1) = cos(x_angle); x_rot(1, 2) = -sin(x_angle);
     x_rot(2, 0) = 0; x_rot(2, 1) = sin(x_angle); x_rot(2, 2) = cos(x_angle);
     // Set roll fix matrix
-    float roll_fix = -filtered_roll;
+    float roll_fix = -filtered_roll - PI;
     float z_angle = -1 * roll_fix;
     z_rot(0, 0) = cos(z_angle); z_rot(0, 1) = -sin(z_angle); z_rot(0, 2) = 0;
     z_rot(1, 0) = sin(z_angle); z_rot(1, 1) = cos(z_angle); z_rot(1, 2) = 0;

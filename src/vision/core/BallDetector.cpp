@@ -271,9 +271,9 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     {
         detections.detections.emplace_back();
         detections.detections.back().color = prototype->color_;
-        detections.detections.back().position[0] = prototype->centroid_.x;
-        detections.detections.back().position[1] = prototype->centroid_.y;
-        detections.detections.back().position[2] = prototype->centroid_.z;
+        // detections.detections.back().position[0] = prototype->centroid_.x;
+        // detections.detections.back().position[1] = prototype->centroid_.y;
+        // detections.detections.back().position[2] = prototype->centroid_.z;
 
         detections.detections.back().position[0] = prototype->get_raw_centroid().x;
         detections.detections.back().position[1] = prototype->get_raw_centroid().y;
