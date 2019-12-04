@@ -4,9 +4,9 @@
  */
 #include <iostream>
 #include <stdio.h>
+#include <vector>
 #include <common/messages/arm_path_t.hpp>
-#include <common/messages/ball_detections_t.hpp>
-#include <common/messages/ball_detection_t.hpp>
+#include <common/messages/ball_t.hpp>
 #include <common/message_channels.hpp>
 #include <planner/arm_planner.hpp>
 #include <lcm/lcm-cpp.hpp>
@@ -14,27 +14,33 @@
 using std::cout;
 using std::endl;
 using std::cerr;
+using std::vector;
 
 class Handler
     {
     public:
         Handler( )
             {
+            planner = ArmPlanner( );
             }
 
         ~Handler( ) { }
 
-        void handleEKFMessage( const lcm::ReceiveBuffer *rbuf, const std::string &channel, const ball_detections_t *balls )
+        void handleEKFMessage( const lcm::ReceiveBuffer *rbuf, const std::string &channel, const ball_t *ball )
             {
-            cout << "Received " << balls->num_detections << " balls from EKF" << endl;
+            cout << ball->id << " update received at " << ball->utime << endl;
+            // construct ball object
+            Ball EKFOutput( ball->id, ball->color, ball->utime, 
+                            Point< double >( ball->position[ 0 ], ball->position[ 1 ] ),
+                            Point< double >( ball->velocity[ 0 ], ball->velocity[ 1 ] ) );
+
+            planner.updateBall( EKFOutput );
+            planner.calculatePlan( );
+            planner.sendPlan( );
             }
         
-        void sendArmPathMessage( )
-            {
-            cout << "Sending arm a plan" << endl;
-            }
     private:
-        ArmPlanner planner;        
+        ArmPlanner planner;
     };
 
 int main( int argc, char ** argv )
@@ -45,8 +51,11 @@ int main( int argc, char ** argv )
     if ( !lcm.good( ) )
         return 1;
 
+    cout << " - Completetd LCM initialization" << endl;
     Handler handler;
-    lcm.subscribe( "CHANNEL", &Handler::handleEKFMessage, &handler );
+    cout << " - Created Handler object" << endl;
+    lcm.subscribe( "ARM_PATH", &Handler::handleEKFMessage, &handler );
+    cout << " - Subscribed to ARM_PATH" << endl;
 
     while ( 0 == lcm.handle( ) );
 

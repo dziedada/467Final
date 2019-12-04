@@ -10,17 +10,17 @@ class Ball
 	private:
 		int id;
 		int color;
-		int64_t utime;
+		int64_t utime; // system utime
+        // int64_t inputTime; // EKF system utime
 		Point< double > coordinate;					// ( x, y )
 		Point< double > velocity;					// ( v_x, v_y )
 		Point< double > coordinate_prediction;	// ( x_1, y_2 )
-        int lastSeen;
 
         friend class ArmPlanner;
 	public:
 		Ball( int id_, int col, int64_t time, Point< double > coord, Point< double > vel = Point< double >( 0, 0 ) )
 				: id( id_ ), color( col ), utime( time ), coordinate( coord ),
-				  velocity( vel ), lastSeen( 0 )
+				  velocity( vel )
 			{
 			}
 
