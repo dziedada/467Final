@@ -8,5 +8,6 @@ namespace channel
     extern const char* const CAMERA_3;
     extern const char* const BALL_DETECTIONS;
     extern const char* const TRACKED_BALLS;
+    extern const char* const ARM_PATH;
 }
 

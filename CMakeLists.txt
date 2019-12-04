@@ -15,6 +15,7 @@ set(CMAKE_CXX_EXTENSIONS ON)
 option(BUILD_VISION "Build the vision system" ON)
 option(BUILD_TESTS "Build test cases" OFF)
 option(BUILD_HOUGH_CIRCLE "Build test cases" OFF)
+option(BUILD_PLANNER "Build planner system" ON)
 
 # Set all compiled libraries to be placed in software/lib
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
@@ -26,6 +27,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 find_package(YAMLCPP REQUIRED)
 find_package(ZCM REQUIRED)
 find_package(libusb-1.0 REQUIRED)
+find_package(LCM REQUIRED)
 
 # Include generated zcm messages and include folder
 include_directories(SYSTEM

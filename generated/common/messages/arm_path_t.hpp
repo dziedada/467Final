@@ -6,26 +6,24 @@
 
 #include <lcm/lcm_coretypes.h>
 
-#ifndef __depth_image_t_hpp__
-#define __depth_image_t_hpp__
+#ifndef __arm_path_t_hpp__
+#define __arm_path_t_hpp__
 
 #include <vector>
 
 
 /**
- * ZCM type for a depth image
+ * LCM type for controlling arm path
  *
  */
-class depth_image_t
+class arm_path_t
 {
     public:
-        int32_t    width;
+        int32_t    waypoints_num;
 
-        int32_t    height;
+        std::vector< std::vector< double > > waypoints;
 
-        int32_t    size;
-
-        std::vector< int16_t > raw_image;
+        double     speed;
 
     public:
         /**
@@ -63,7 +61,7 @@ class depth_image_t
         inline static int64_t getHash();
 
         /**
-         * Returns "depth_image_t"
+         * Returns "arm_path_t"
          */
         inline static const char* getTypeName();
 
@@ -74,7 +72,7 @@ class depth_image_t
         inline static uint64_t _computeHash(const __lcm_hash_ptr *p);
 };
 
-int depth_image_t::encode(void *buf, int offset, int maxlen) const
+int arm_path_t::encode(void *buf, int offset, int maxlen) const
 {
     int pos = 0, tlen;
     int64_t hash = (int64_t)getHash();
@@ -88,7 +86,7 @@ int depth_image_t::encode(void *buf, int offset, int maxlen) const
     return pos;
 }
 
-int depth_image_t::decode(const void *buf, int offset, int maxlen)
+int arm_path_t::decode(const void *buf, int offset, int maxlen)
 {
     int pos = 0, thislen;
 
@@ -103,78 +101,74 @@ int depth_image_t::decode(const void *buf, int offset, int maxlen)
     return pos;
 }
 
-int depth_image_t::getEncodedSize() const
+int arm_path_t::getEncodedSize() const
 {
     return 8 + _getEncodedSizeNoHash();
 }
 
-int64_t depth_image_t::getHash()
+int64_t arm_path_t::getHash()
 {
     static int64_t hash = _computeHash(NULL);
     return hash;
 }
 
-const char* depth_image_t::getTypeName()
+const char* arm_path_t::getTypeName()
 {
-    return "depth_image_t";
+    return "arm_path_t";
 }
 
-int depth_image_t::_encodeNoHash(void *buf, int offset, int maxlen) const
+int arm_path_t::_encodeNoHash(void *buf, int offset, int maxlen) const
 {
     int pos = 0, tlen;
 
-    tlen = __int32_t_encode_array(buf, offset + pos, maxlen - pos, &this->width, 1);
+    tlen = __int32_t_encode_array(buf, offset + pos, maxlen - pos, &this->waypoints_num, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
-    tlen = __int32_t_encode_array(buf, offset + pos, maxlen - pos, &this->height, 1);
-    if(tlen < 0) return tlen; else pos += tlen;
-
-    tlen = __int32_t_encode_array(buf, offset + pos, maxlen - pos, &this->size, 1);
-    if(tlen < 0) return tlen; else pos += tlen;
-
-    if(this->size > 0) {
-        tlen = __int16_t_encode_array(buf, offset + pos, maxlen - pos, &this->raw_image[0], this->size);
+    for (int a0 = 0; a0 < this->waypoints_num; a0++) {
+        tlen = __double_encode_array(buf, offset + pos, maxlen - pos, &this->waypoints[a0][0], 2);
         if(tlen < 0) return tlen; else pos += tlen;
     }
+
+    tlen = __double_encode_array(buf, offset + pos, maxlen - pos, &this->speed, 1);
+    if(tlen < 0) return tlen; else pos += tlen;
 
     return pos;
 }
 
-int depth_image_t::_decodeNoHash(const void *buf, int offset, int maxlen)
+int arm_path_t::_decodeNoHash(const void *buf, int offset, int maxlen)
 {
     int pos = 0, tlen;
 
-    tlen = __int32_t_decode_array(buf, offset + pos, maxlen - pos, &this->width, 1);
+    tlen = __int32_t_decode_array(buf, offset + pos, maxlen - pos, &this->waypoints_num, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
-    tlen = __int32_t_decode_array(buf, offset + pos, maxlen - pos, &this->height, 1);
-    if(tlen < 0) return tlen; else pos += tlen;
-
-    tlen = __int32_t_decode_array(buf, offset + pos, maxlen - pos, &this->size, 1);
-    if(tlen < 0) return tlen; else pos += tlen;
-
-    if(this->size) {
-        this->raw_image.resize(this->size);
-        tlen = __int16_t_decode_array(buf, offset + pos, maxlen - pos, &this->raw_image[0], this->size);
-        if(tlen < 0) return tlen; else pos += tlen;
+    this->waypoints.resize(this->waypoints_num);
+    for (int a0 = 0; a0 < this->waypoints_num; a0++) {
+        if(2) {
+            this->waypoints[a0].resize(2);
+            tlen = __double_decode_array(buf, offset + pos, maxlen - pos, &this->waypoints[a0][0], 2);
+            if(tlen < 0) return tlen; else pos += tlen;
+        }
     }
+
+    tlen = __double_decode_array(buf, offset + pos, maxlen - pos, &this->speed, 1);
+    if(tlen < 0) return tlen; else pos += tlen;
 
     return pos;
 }
 
-int depth_image_t::_getEncodedSizeNoHash() const
+int arm_path_t::_getEncodedSizeNoHash() const
 {
     int enc_size = 0;
     enc_size += __int32_t_encoded_array_size(NULL, 1);
-    enc_size += __int32_t_encoded_array_size(NULL, 1);
-    enc_size += __int32_t_encoded_array_size(NULL, 1);
-    enc_size += __int16_t_encoded_array_size(NULL, this->size);
+    enc_size += this->waypoints_num * __double_encoded_array_size(NULL, 2);
+    enc_size += __double_encoded_array_size(NULL, 1);
     return enc_size;
 }
 
-uint64_t depth_image_t::_computeHash(const __lcm_hash_ptr *)
+uint64_t arm_path_t::_computeHash(const __lcm_hash_ptr *)
 {
-    uint64_t hash = 0x77d33e30a3ee87ddLL;
+    uint64_t hash = 0xb035843bfa4ee381LL;
     return (hash<<1) + ((hash>>63)&1);
 }
 
