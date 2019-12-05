@@ -118,6 +118,9 @@ class ArmPlanner
 
             // Project the ball out between time intervals
             Point< float > times = projectTimeToReach( *closest );
+
+            // pick best place to hit ball between
+            for ( float interval = times[ 0 ];  interval
             }
 
 
