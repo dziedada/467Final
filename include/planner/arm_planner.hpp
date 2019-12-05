@@ -6,12 +6,14 @@
  * Outputs arm orientations to python arm controller
  */
 #include <math.h>
+#include <utility>
 #include <vector>
 #include <cfloat>
 #include "ball.hpp"
 #include <lcm/lcm-cpp.hpp>
 #include <common/message_channels.hpp>
 #include <common/messages/arm_path_t.hpp>
+
 
 class ArmPlanner
 	{
@@ -101,7 +103,30 @@ class ArmPlanner
                 }
             }
 
-        void calculatePlan( )
+        double ballSpotHeuristic( Point < double > spot )
+            {
+            return 1.0;
+            }
+
+        double temporaryHeuristic( std::pair< Point < double >, Point < double > > spots )
+            {
+            return 1.0;
+            }
+
+        Point < double > chooseGoal ( Ball &ball )
+            {
+            return Point < double >( 0.0, 0.0 );
+            }
+
+        std::pair < Point < double >, Point < double > > calculateWaypoints( Ball &ball, Point < double > &spot, Point < double > &goal )
+            {
+            // calculate the angle between the spot and goal
+            Point < double > first( 0.1, 0.08 );
+            Point < double > second( 0.08, 0.15 );
+            return std::make_pair( first, second );
+            }
+
+        std::pair< Point < double >, Point < double > > calculatePlan( )
             {
             // Find closest ball
             Ball * closest;
@@ -119,26 +144,39 @@ class ArmPlanner
             // Project the ball out between time intervals
             Point< float > times = projectTimeToReach( *closest );
 
+            // a spot is a place to hit the ball from
+            double bestSpotScore = DBL_MAX;
+            Point < double > bestSpot;
             // pick best place to hit ball between
-            for ( float interval = times[ 0 ];  interval
+            for ( float interval = times.x;  interval <= times.y;  ++interval )
+                {
+                Point< double > spot = projectBall( *closest, interval );
+                double spotScore = ballSpotHeuristic( spot );
+                if ( spotScore < bestSpotScore )
+                    {
+                    bestSpot = spot;
+                    bestSpotScore = spotScore; 
+                    }
+                }
+
+            Point < double > goal = chooseGoal( *closest );
+            return calculateWaypoints( *closest, bestSpot, goal );
             }
 
 
-        void sendPlan( )
+        void publishPlan( std::pair < Point < double >, Point < double > > &pr )
             {
             arm_path_t path;
             path.waypoints_num = 1;
 
-            Point < double > first( 0.1, 0.08 );
-            Point < double > second( 0.08, 0.15 );
 
-            path.waypoints[0][0] = first.x;
-            path.waypoints[0][1] = first.y;
+            path.waypoints[0][0] = pr.first.x;
+            path.waypoints[0][1] = pr.first.y;
             path.speed = 1;
 
             lcm->publish( channel::ARM_PATH, &path );
 
-            path.waypoints[0][0] = second.x;
-            path.waypoints[0][1] = second.y;
+            path.waypoints[0][0] = pr.second.x;
+            path.waypoints[0][1] = pr.second.y;
             }
 	};
