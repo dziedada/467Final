@@ -9,8 +9,9 @@ find_package(LCM REQUIRED)
 include_directories(
     ${YAMLCPP_INCLUDE_DIRS}
     ${LCM_INCLUDE_DIR}
+    ${EIGEN3_INCLUDE_DIR}
 )
 
 add_executable(ArmPlanner planner.cpp)
 
-target_link_libraries( ArmPlanner LINK_PUBLIC ${LCM_LIBRARY} )
+target_link_libraries( ArmPlanner LINK_PUBLIC ${LCM_LIBRARY})

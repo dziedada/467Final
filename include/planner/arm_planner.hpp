@@ -13,6 +13,8 @@
 #include <lcm/lcm-cpp.hpp>
 #include <common/message_channels.hpp>
 #include <common/messages/arm_path_t.hpp>
+#include <common/messages/ball_detections_t.hpp>
+#include <common/messages/ball_detection_t.hpp>
 
 
 class ArmPlanner
@@ -25,6 +27,7 @@ class ArmPlanner
 
         double armInnerRadius = 0.100;
         double armOuterRadius = 0.175;
+        int emptyFrames = 0;
 
         Point < double > armBase( 0.0, 0.0 );
         double bicepJointLength = 0.1;
@@ -40,29 +43,72 @@ class ArmPlanner
             goals = newGoals;
             }
 
-        void updateBall( Ball ball )
-            {
+        void updateBall( const ball_detection_t &ball )
+        {
+
             // add the incoming balls to our vector of balls and mark the time
             bool exists = false;
             for ( auto &existing: balls )
-                {
+            {
                 if ( ball.id == existing.id )
                     existing = ball;
-                }
+            }
 
             if ( !exists )
                 balls.push_back( ball );
-            }
+        }
 
-        void updateBalls( std::vector< Ball > newBalls )
+        // TODO: Add multi-ball tracking
+        void updateBalls(const ball_detections_t &newBalls )
             {
-            // add the incoming balls to our vector of balls and mark the time
-            for ( auto &ball: newBalls )
+                // each detection is either a new ball, existing ball, or False
+                double minDist = -1;
+                ball_detection_t bestDetection;
+
+                // handle if the ball is a new ball
+                if(newBalls.detections.empty())
                 {
-                updateBall( ball );
+                    emptyFrames++;
+                    return;
                 }
-            }
-        
+                else 
+                {
+                    if(emptyFrames > 10) { balls.clear(); }
+                    emptyFrames = 0;
+                }
+
+                for (size_t i = 0; i < newBalls.detections.size(); ++i)
+                {
+                    ball_detection_t detection = newBalls[i];
+                    if(balls.empty()) {
+                        // chose detection closest to the arm 
+                        if(minDist == -1 || sqrt(detection.position[0]*detection.position[0] + 
+                            detection.position[1]*detection.position[1]) < minDist)  
+                        {
+                            bestDetection = detection;
+                            minDist = sqrt(detection.position[0]*detection.position[0] + 
+                                        detection.position[1]*detection.position[1]);
+                        }
+                    }
+                    else {
+                        // chose the detection closest to previous ball
+                        // TODO: Use a
+                        Ball prevBall = balls[0];
+
+                        if(minDist == -1) bestDetection = detection;
+                    }
+                }
+
+                if(balls.empty()) { 
+                    balls.push_back( Ball(bestDetection.id, bestDetection.utime,
+                        Eigen::Vector2d(bestDetection.position[0], bestDetection[1])) );
+                }
+
+                // match the ball_detections_t to the existing_balls or get new ball
+
+
+           
+             
         float convertUTimeToSeconds( int64_t utime )
             {
             return static_cast< float > ( utime ) / 10e9;
@@ -84,6 +130,7 @@ class ArmPlanner
             Point< double > projection = ball.coordinate;
             projection.x += ball.velocity.x * time;
             projection.y += ball.velocity.y * time;
+            return projection;
             }
 
         // check to see if the ball will reach radius of us within
@@ -106,7 +153,7 @@ class ArmPlanner
             }
 
         std::pair < Point < double >, Point < double > > calculateWaypoints( Ball &ball, Point < double > &spot, Point < double > &goal )
-            {
+        {
             // calculate the angle between the spot and goal
             double thetaToGoal = calculateAngleRadians( Point < double >( 0.0, 0.0 ), Point< double >( 0.0, 0.5 );
             double minimumVerticalVelocity = velocity.y / 3; // dependent on the elasticity of our putter
@@ -116,10 +163,10 @@ class ArmPlanner
             Point < double > first( 0.1, 0.08 );
             Point < double > second( 0.08, 0.15 );
             return std::make_pair( first, second );
-            }
+        }
 
         std::pair< Point < double >, Point < double > > calculatePlan( )
-            {
+        {
             // Find closest ball
             Ball * closest;
             double closestDistance = DBL_MAX;
@@ -155,7 +202,7 @@ class ArmPlanner
 
             Point < double > goal = chooseGoal( *closest );
             return calculateWaypoints( *closest, bestSpot, goal );
-            }
+        }
 
 
         void publishArmPlan( std::vector < double > angles )

@@ -22,6 +22,7 @@ include_directories(SYSTEM
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
+if(BUILD_VISION)
 add_executable(vision-driver VisionDriver.cpp)
 
 target_link_libraries(vision-driver
@@ -67,6 +68,7 @@ target_link_libraries(calibration
     common
     m
 )
+endif()
 
 if (BUILD_HOUGH_CIRCLE)
     add_executable(hough-circle HoughCircleTest.cpp)
