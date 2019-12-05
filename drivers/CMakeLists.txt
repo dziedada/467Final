@@ -33,7 +33,7 @@ target_link_libraries(vision-driver
     CameraInterface
     VisionUtils
     BallDetector
-    Calibrator
+    CloudTransformer
     common
     m
 )
