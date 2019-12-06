@@ -46,14 +46,50 @@ PointXYZ CloudTransformer::transform(const PointXYZ& point)
 PointCloud<PointXYZ>::Ptr CloudTransformer::transform(PointCloud<PointXYZ>::Ptr cloud)
 {
     PointCloud<PointXYZ>::Ptr output(new PointCloud<PointXYZ>());
-    pcl::transformPointCloud (*cloud, *output, transform_matrix_);
+    *output = *cloud;
+    if (cloud->isOrganized())
+    {
+        for (size_t y = 0; y < cloud->height; ++y)
+        {
+            for (size_t x = 0; x < cloud->width; ++x)
+            {
+                output->at(x, y) = transform(cloud->at(x, y));
+            }
+        }
+    }
+    else
+    {
+        for (size_t i = 0; i < cloud->size(); ++i)
+        {
+            output->operator[](i) = transform(cloud->operator[](i));
+        }
+    }
+    // pcl::transformPointCloud (*cloud, *output, transform_matrix_);
     return output;
 }
 
 PointCloud<PointXYZ> CloudTransformer::transform(const PointCloud<PointXYZ>& cloud)
 {
     PointCloud<PointXYZ> output;
-    pcl::transformPointCloud (cloud, output, transform_matrix_);
+    output = cloud;
+    if (cloud.isOrganized())
+    {
+        for (size_t y = 0; y < cloud.height; ++y)
+        {
+            for (size_t x = 0; x < cloud.width; ++x)
+            {
+                output.at(x, y) = transform(cloud.at(x, y));
+            }
+        }
+    }
+    else
+    {
+        for (size_t i = 0; i < cloud.size(); ++i)
+        {
+            output.operator[](i) = transform(cloud.operator[](i));
+        }
+    }
+    // pcl::transformPointCloud (cloud, output, transform_matrix_);
     return output;
 }
 
@@ -61,7 +97,7 @@ ball_detection_t CloudTransformer::transform(const ball_detection_t& detection)
 {
     Vector4f vec(detection.position[0], detection.position[1], detection.position[2], 1);
     Vector4f result = transform_matrix_ * vec;
-    ball_detection_t output;
+    ball_detection_t output = detection;
     for (int i = 0; i < 3; ++i)
     {
         output.position[i] = result[i];

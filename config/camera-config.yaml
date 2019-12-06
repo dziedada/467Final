@@ -24,11 +24,11 @@ forward:
   enable_autoexposure: false
   publish_pose: false # tracking camera only
   rotation: [
-    -0.0127659, -0.189138, 0.981868,
-    0.999185, 0.035204, 0.0197724,
-    0.0383054, -0.981319, -0.188534
+    0.0502454, -0.251555, 0.966538,
+    0.99866, 0.0246766, -0.0454929,
+    0.0124069, -0.967528, -0.252458
   ] # 3x3 rotation matrix left to right first, then top to bottom
-  translation: [-0.333792, -0.0114152, 0.356817] # 3x1 translation vector
+  translation: [0.027655, -0.048847, 0.348459] # 3x1 translation vector
 
 downward:
   enabled: false
@@ -59,9 +59,9 @@ other-forward: # To accomodate the t265 in use with the other cameras
   enable_autoexposure: false
   publish_pose: false # tracking camera only
   rotation: [
-    1, 0, 0,
-    0, 1, 0,
-    0, 0, 1 
+    -0.0691559, 0.234433, -0.969669,
+    -0.997494, -0.0307733, 0.0637004,
+    0.0149064, -0.971645, -0.235974
   ] # 3x3 rotation matrix left to right first, then top to bottom
   translation: [0, 0, 0] # 3x1 translation vector
 

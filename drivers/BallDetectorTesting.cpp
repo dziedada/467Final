@@ -75,7 +75,7 @@ int main(int argc, char**argv)
     // Create zcm instance
     RealsenseInterface camera(config["forward"]);
     CloudTransformer transformer(config["forward"]);
-    BallDetector ball_detector(true);
+    BallDetector ball_detector(true, config["ball_detector"]);
     camera.disableAutoExposure();
     // Set up sighandler
     atomic_bool running;
@@ -87,6 +87,8 @@ int main(int argc, char**argv)
     };
     // Must set the sigHandlerImpl before setting signal handling
     signal(SIGINT, sigHandler);
+    bool pre_transform_cloud = !config["ball_detector"]["plane_mask"].as<bool>();
+    cout << pre_transform_cloud << '\n';
     // Wait until someone tries to terminate the program
     while (running)
     {
@@ -98,6 +100,11 @@ int main(int argc, char**argv)
         Mat depth = camera.getDepth();
         PointCloud<PointXYZ>::Ptr unordered_cloud = camera.getPointCloudBasic();
         PointCloud<PointXYZ>::Ptr ordered_cloud = camera.getMappedPointCloud();
+        if (pre_transform_cloud)
+        {
+            unordered_cloud = transformer.transform(unordered_cloud);
+            ordered_cloud = transformer.transform(ordered_cloud);
+        }
         int64_t utime = camera.getUTime();
 
         ball_detections_t message = ball_detector.detect(rgb, unordered_cloud, ordered_cloud);
