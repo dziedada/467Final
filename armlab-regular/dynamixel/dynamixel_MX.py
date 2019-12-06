@@ -185,7 +185,7 @@ class DXL_MX:
             if(speed>0.0):
                 value = value + 1024
         retry = 0
-        print(value)
+        #print(value)
         while(retry < num_tries):
             dxl.write2ByteTxRx(self.port, PROTOCOL, self.id, ADDR_MOVING_SPEED, value)
             dcomm_result = dxl.getLastTxRxResult(self.port, PROTOCOL)

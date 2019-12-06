@@ -91,8 +91,8 @@ class Rexarm():
             467TODO:
             set speed
             """
-            self.speed[i] = speeds[i] * speed_norm
-            #self.speed[i] = 1.0
+            #self.speed[i] = speeds[i] * speed_norm
+            self.speed[i] = 1.0
         self.send_commands()
 
     def initialize(self):
@@ -157,7 +157,9 @@ class Rexarm():
     def send_commands(self):
         self.set_positions(self.position)
         self.set_speeds_normalized(self.speed)
+        #print("speed:", self.speed)
         self.set_torque_limits(self.max_torque)
+        #print("torque: ", self.max_torque)
 
     def enable_torque(self):
         for joint in self.joints:
