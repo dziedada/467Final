@@ -60,52 +60,57 @@ class ArmPlanner
 
         // TODO: Add multi-ball tracking
         void updateBalls(const ball_detections_t &newBalls )
+        {
+            // each detection is either a new ball, existing ball, or False
+            double minDist = -1;
+            ball_detection_t bestDetection;
+
+            // handle if the ball is a new ball
+            if(newBalls.detections.empty())
             {
-                // each detection is either a new ball, existing ball, or False
-                double minDist = -1;
-                ball_detection_t bestDetection;
+                emptyFrames++;
+                return;
+            }
+            else 
+            {
+                // TODO: Make configurable
+                if(emptyFrames > 100) { balls.clear(); }
+                emptyFrames = 0;
+            }
 
-                // handle if the ball is a new ball
-                if(newBalls.detections.empty())
-                {
-                    emptyFrames++;
-                    return;
-                }
-                else 
-                {
-                    if(emptyFrames > 10) { balls.clear(); }
-                    emptyFrames = 0;
-                }
-
-                for (size_t i = 0; i < newBalls.detections.size(); ++i)
-                {
-                    ball_detection_t detection = newBalls[i];
-                    if(balls.empty()) {
-                        // chose detection closest to the arm 
-                        if(minDist == -1 || sqrt(detection.position[0]*detection.position[0] + 
-                            detection.position[1]*detection.position[1]) < minDist)  
-                        {
-                            bestDetection = detection;
-                            minDist = sqrt(detection.position[0]*detection.position[0] + 
-                                        detection.position[1]*detection.position[1]);
-                        }
-                    }
-                    else {
-                        // chose the detection closest to previous ball
-                        // TODO: Use a
-                        Ball prevBall = balls[0];
-
-                        if(minDist == -1) bestDetection = detection;
+            for (size_t i = 0; i < newBalls.detections.size(); ++i)
+            {
+                ball_detection_t detection = newBalls[i];
+                if(balls.empty()) {
+                    // chose detection closest to the arm 
+                    if(minDist == -1 || sqrt(detection.position[0]*detection.position[0] + 
+                        detection.position[1]*detection.position[1]) < minDist)  
+                    {
+                        bestDetection = detection;
+                        minDist = sqrt(detection.position[0]*detection.position[0] + 
+                                    detection.position[1]*detection.position[1]);
                     }
                 }
+                else {
+                    // chose the detection closest to previous ball
+                    // TODO: Use a
+                    Ball prevBall = balls[0];
 
-                if(balls.empty()) { 
-                    balls.push_back( Ball(bestDetection.id, bestDetection.utime,
-                        Eigen::Vector2d(bestDetection.position[0], bestDetection[1])) );
+                    if(minDist == -1) bestDetection = detection;
+                    sqrt(detection.position[0]*detection.position[0] + 
+                                    detection.position[1]*detection.position[1]);
+                    
                 }
+            }
 
-                // match the ball_detections_t to the existing_balls or get new ball
-
+            if(balls.empty()) { 
+                balls.push_back( Ball(bestDetection.id, bestDetection.utime,
+                    Eigen::Vector2d(bestDetection.position[0], bestDetection[1])) );
+            }
+            else {
+                balls[0].update(bestDetection);
+            }
+        }
 
            
              

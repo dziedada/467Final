@@ -8,9 +8,12 @@
 #include <cmath>
 #include <opencv2/video/tracking.hpp>
 #include <Eigen/Core>
+#include <vector>
 
 using Eigen::Vector2d;
 using Eigen::Vector4d;
+using cv::Mat;
+
 class Ball
 	{
 	private:
@@ -22,8 +25,9 @@ class Ball
 		Vector2d velocity;					// ( v_x, v_y )
 		Vector2d coordinate_prediction;	// ( x_1, y_2 )
 		cv::KalmanFilter kf;
-		cv::Mat state;
-		cv::Mat meas;
+		cv::Mat state; // [x, y, v_x, v_y]
+		cv::Mat meas;  // [x, y]
+		std::vector<double> kf_error_history;
 
         friend class ArmPlanner;
 	public:
@@ -35,12 +39,12 @@ class Ball
 			int stateSize = 4; // [x, y, v_x, v_y]
 			int measSize = 2;  // [x, y]
 			int contrSize = 0; // no control input
-			unsigned int type = CV_32F;
+			unsigned int type = CV_64F; // double type
 
 			kf = cv::KalmanFilter(stateSize, measSize, contrSize, type)
 
-			state = cv::Mat(stateSize, 1, type);  // [x,y,v_x,v_y]
-    		meas = cv::Mat(measSize, 1, type);    // [z_x,z_y]
+			state = Mat(stateSize, 1, type);  // [x,y,v_x,v_y]
+    		meas = Mat(measSize, 1, type);    // [z_x,z_y]
 
 			// Transition matrix
 		    // Note: set dT at each processing step!
@@ -53,9 +57,9 @@ class Ball
 			// Measure Matrix H
 		    // [ 1 0 0 0]
 		    // [ 0 1 0 0]
-		    kf.measurementMatrix = cv::Mat::zeros(measSize, stateSize, type);
-		    kf.measurementMatrix.at<float>(0) = 1.0f;
-		    kf.measurementMatrix.at<float>(5) = 1.0f;
+		    kf.measurementMatrix = Mat::zeros(measSize, stateSize, type);
+		    kf.measurementMatrix.at<double>(0) = 1.0f;
+		    kf.measurementMatrix.at<double>(5) = 1.0f;
 
 		    // Process noise covariance matrix Q
 		    // TODO: Tune
@@ -65,18 +69,27 @@ class Ball
     		cv::setIdentity(kf.measurementNoiseCov, cv::Scalar(1e-1));
 		}
 
-		void update(const ball_detection_t &measurement)
+		void update(const ball_detection_t &detection)
 		{
-			float dT = (float)(measurement.utime - utime) / (float)1000000;
-			utime = measurement.utime;
+			double dT = (double)(detection.utime - utime) / (double)1000000;
+			utime = detection.utime;
 
-			// update Matrix A
-			kf.transitionMatrix.at<float>(2) = dT;
-            kf.transitionMatrix.at<float>(7) = dT;
+			// update Matrix A for correct velocity estimate 
+			kf.transitionMatrix.at<double>(2) = dT;
+            kf.transitionMatrix.at<double>(7) = dT;
 
+            // for error checking
+            Mat prediction = kf.predict();
+            Vector2d predictPt(prediction.at<double>(0),prediction.at<double>(1));
 
+            // state estimate
+            meas.at<double>(0) = detection.position[0];
+            meas.at<double>(1) = detection.position[1];
 
-			return;
+            state = kf.correct(meas);
+            Vector2d estimatePt(state.at<double>(0),state.at<double>(1));
+
+            kf_error_history.push_back( (estimatePt - predictPt).norm() );
 		}
 
 		bool operator==(const Ball &other)
@@ -94,10 +107,26 @@ class Ball
         this->coordinate_prediction = other.coordinate_prediction;
         }
 
+<<<<<<< HEAD
 		bool predict_coordinate( )
 			{
 			}
         
+=======
+        // predict out the ball in dt seconds
+		Vector4d predict_coordinate( double dt )
+		{
+			// update Matrix A for correct velocity estimate 
+			kf.transitionMatrix.at<double>(2) = dT;
+            kf.transitionMatrix.at<double>(7) = dT;
+            return kf.predict();
+		}
+
+		Vector2d getPos()
+		{
+			return Vector2d(state[0], state[1]);
+		}
+>>>>>>> WIP: tracker
 	};
 
 // Other Helper Functions ( trig )
