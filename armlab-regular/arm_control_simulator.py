@@ -29,7 +29,7 @@ def use_arm_path_t():
 	msg.speed = 1
 	msg.waypoints_num = 1
 	#msg.waypoints = [[0.1, inter[0]]]
-	msg.waypoints = [[0.1, 0.06]]
+	msg.waypoints = [[0.1, 0.05]]
 	lc = lcm.LCM()
 	lc.publish("ARM_PATH", msg.encode())
 	time.sleep(3)
@@ -37,7 +37,7 @@ def use_arm_path_t():
 	msg.waypoints = []
 	for i in range(1, num):
 		msg.waypoints.append([0.1, inter[i]])
-	msg.waypoints = [[0.08, 0.15]]
+	msg.waypoints = [[0, 0.19]]
 	lc.publish("ARM_PATH", msg.encode())
 
 def test():
@@ -46,14 +46,29 @@ def test():
 	msg.waypoints_num = 1
 	#msg.waypoints = [[-0.1, 0.1]]
 	#msg.waypoints = [[0.1, 0.08]]
-	msg.waypoints = [[0.19, 0.01]]
+	#msg.waypoints = [[0.19, 0.01]]
+	msg.waypoints = [[0.1, 0.1]]
 	lc = lcm.LCM()
+	lc.publish("ARM_PATH", msg.encode())
+
+def use_new_arm_path_t():
+	msg = arm_path_t()
+	msg.speed = 1
+	msg.angles_num = 1
+	#msg.waypoints = [[0.1, inter[0]]]
+	msg.angles = [[- np.pi / 2, np.pi / 3, 0, np.pi / 2]]
+	
+	lc = lcm.LCM()
+	lc.publish("ARM_PATH", msg.encode())
+	time.sleep(3)
+	msg.angles = [[- np.pi / 2, -np.pi / 3, 0, np.pi / 2]]
 	lc.publish("ARM_PATH", msg.encode())
 
 def main():
 	# use_ball_t()
-	use_arm_path_t()
+	#use_arm_path_t()
 	#test()
+	use_new_arm_path_t()
 	
 
 if __name__ == '__main__':

@@ -120,7 +120,10 @@ def IK(pose):
     target_len = math.sqrt(x ** 2 + y ** 2)
     
     A = np.arccos((upperarm_len ** 2 + target_len ** 2 - forearm_len ** 2) / (2 * upperarm_len * target_len))
-    theta0 = - (np.arctan(abs(x / y)) + A)
+    if y == 0.0:
+        theta0 = - (np.pi / 2 + A)
+    else:
+        theta0 = - (np.arctan(abs(x / y)) + A)
     B = np.arccos((upperarm_len ** 2 + forearm_len ** 2 - target_len ** 2) / (2 * upperarm_len * forearm_len))    
     theta1 = math.pi - B
     if x < 0:

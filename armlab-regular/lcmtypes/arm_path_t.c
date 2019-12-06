@@ -21,7 +21,9 @@ int64_t __arm_path_t_hash_recursive(const __lcm_hash_ptr *p)
     cp.v = (void*)__arm_path_t_get_hash;
     (void) cp;
 
-    int64_t hash = (int64_t)0xb035843bfa4ee381LL
+    int64_t hash = (int64_t)0x862583ddf13963cfLL
+         + __int32_t_hash_recursive(&cp)
+         + __double_hash_recursive(&cp)
          + __int32_t_hash_recursive(&cp)
          + __double_hash_recursive(&cp)
          + __double_hash_recursive(&cp)
@@ -52,6 +54,16 @@ int __arm_path_t_encode_array(void *buf, int offset, int maxlen, const arm_path_
         { int a;
         for (a = 0; a < p[element].waypoints_num; a++) {
             thislen = __double_encode_array(buf, offset + pos, maxlen - pos, p[element].waypoints[a], 2);
+            if (thislen < 0) return thislen; else pos += thislen;
+        }
+        }
+
+        thislen = __int32_t_encode_array(buf, offset + pos, maxlen - pos, &(p[element].angles_num), 1);
+        if (thislen < 0) return thislen; else pos += thislen;
+
+        { int a;
+        for (a = 0; a < p[element].angles_num; a++) {
+            thislen = __double_encode_array(buf, offset + pos, maxlen - pos, p[element].angles[a], 4);
             if (thislen < 0) return thislen; else pos += thislen;
         }
         }
@@ -90,6 +102,14 @@ int __arm_path_t_encoded_array_size(const arm_path_t *p, int elements)
         }
         }
 
+        size += __int32_t_encoded_array_size(&(p[element].angles_num), 1);
+
+        { int a;
+        for (a = 0; a < p[element].angles_num; a++) {
+            size += __double_encoded_array_size(p[element].angles[a], 4);
+        }
+        }
+
         size += __double_encoded_array_size(&(p[element].speed), 1);
 
     }
@@ -108,7 +128,7 @@ size_t arm_path_t_struct_size(void)
 
 int arm_path_t_num_fields(void)
 {
-    return 3;
+    return 5;
 }
 
 int arm_path_t_get_field(const arm_path_t *p, int i, lcm_field_t *f)
@@ -141,6 +161,28 @@ int arm_path_t_get_field(const arm_path_t *p, int i, lcm_field_t *f)
         }
         
         case 2: {
+            f->name = "angles_num";
+            f->type = LCM_FIELD_INT32_T;
+            f->typestr = "int32_t";
+            f->num_dim = 0;
+            f->data = (void *) &p->angles_num;
+            return 0;
+        }
+        
+        case 3: {
+            f->name = "angles";
+            f->type = LCM_FIELD_DOUBLE;
+            f->typestr = "double";
+            f->num_dim = 2;
+            f->dim_size[0] = p->angles_num;
+            f->dim_size[1] = 4;
+            f->dim_is_variable[0] = 1;
+            f->dim_is_variable[1] = 0;
+            f->data = (void *) &p->angles;
+            return 0;
+        }
+        
+        case 4: {
             f->name = "speed";
             f->type = LCM_FIELD_DOUBLE;
             f->typestr = "double";
@@ -189,6 +231,18 @@ int __arm_path_t_decode_array(const void *buf, int offset, int maxlen, arm_path_
         }
         }
 
+        thislen = __int32_t_decode_array(buf, offset + pos, maxlen - pos, &(p[element].angles_num), 1);
+        if (thislen < 0) return thislen; else pos += thislen;
+
+        p[element].angles = (double**) lcm_malloc(sizeof(double*) * p[element].angles_num);
+        { int a;
+        for (a = 0; a < p[element].angles_num; a++) {
+            p[element].angles[a] = (double*) lcm_malloc(sizeof(double) * 4);
+            thislen = __double_decode_array(buf, offset + pos, maxlen - pos, p[element].angles[a], 4);
+            if (thislen < 0) return thislen; else pos += thislen;
+        }
+        }
+
         thislen = __double_decode_array(buf, offset + pos, maxlen - pos, &(p[element].speed), 1);
         if (thislen < 0) return thislen; else pos += thislen;
 
@@ -210,6 +264,16 @@ int __arm_path_t_decode_array_cleanup(arm_path_t *p, int elements)
         }
         }
         if (p[element].waypoints) free(p[element].waypoints);
+
+        __int32_t_decode_array_cleanup(&(p[element].angles_num), 1);
+
+        { int a;
+        for (a = 0; a < p[element].angles_num; a++) {
+            __double_decode_array_cleanup(p[element].angles[a], 4);
+            if (p[element].angles[a]) free(p[element].angles[a]);
+        }
+        }
+        if (p[element].angles) free(p[element].angles);
 
         __double_decode_array_cleanup(&(p[element].speed), 1);
 
@@ -250,6 +314,16 @@ int __arm_path_t_clone_array(const arm_path_t *p, arm_path_t *q, int elements)
         for (a = 0; a < p[element].waypoints_num; a++) {
             q[element].waypoints[a] = (double*) lcm_malloc(sizeof(double) * 2);
             __double_clone_array(p[element].waypoints[a], q[element].waypoints[a], 2);
+        }
+        }
+
+        __int32_t_clone_array(&(p[element].angles_num), &(q[element].angles_num), 1);
+
+        q[element].angles = (double**) lcm_malloc(sizeof(double*) * q[element].angles_num);
+        { int a;
+        for (a = 0; a < p[element].angles_num; a++) {
+            q[element].angles[a] = (double*) lcm_malloc(sizeof(double) * 4);
+            __double_clone_array(p[element].angles[a], q[element].angles[a], 4);
         }
         }
 

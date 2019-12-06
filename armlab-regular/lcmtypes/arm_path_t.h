@@ -24,6 +24,8 @@ struct _arm_path_t
 {
     int32_t    waypoints_num;
     double     **waypoints;
+    int32_t    angles_num;
+    double     **angles;
     double     speed;
 };
 
