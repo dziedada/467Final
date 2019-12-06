@@ -29,18 +29,14 @@ class Handler
 
         ~Handler( ) { }
 
-        void handleEKFMessage( const lcm::ReceiveBuffer *rbuf, const std::string &channel, const ball_t *ball )
+        void handleEKFMessage( const lcm::ReceiveBuffer *rbuf, const std::string &channel, const ball_detections_t *ball )
             {
-            cout << ball->id << " update received at " << ball->utime << endl;
-            // construct ball object
-            Ball EKFOutput( ball->id, ball->color, ball->utime, 
-                            Point< double >( ball->position[ 0 ], ball->position[ 1 ] ),
-                            Point< double >( ball->velocity[ 0 ], ball->velocity[ 1 ] ) );
+            cout << " update received at " << ball->utime << endl;
 
-            planner.updateBall( EKFOutput );
+            planner.updateBalls( *ball );
 
-            pair< Point < double >, Point < double > > plan = planner.calculatePlan( );
-            planner.publishPlan( plan );
+            //pair< Point < double >, Point < double > > plan = planner.calculatePlan( );
+            //planner.publishPlan( plan );
             }
         
     private:

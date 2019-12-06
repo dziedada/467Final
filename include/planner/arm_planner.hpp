@@ -12,6 +12,7 @@
 #include <Eigen/Core>
 #include "ball.hpp"
 #include <lcm/lcm-cpp.hpp>
+#include <common/point.hpp>
 #include <common/message_channels.hpp>
 #include <common/messages/arm_path_t.hpp>
 #include <common/messages/ball_detections_t.hpp>
@@ -32,7 +33,6 @@ class ArmPlanner
         double armOuterRadius = 0.175;
         int emptyFrames = 0;
 
-        Point < double > armBase( 0.0, 0.0 );
         double bicepJointLength = 0.1;
         double elbowJointLength = 0.1;
 
@@ -46,20 +46,20 @@ class ArmPlanner
             goals = newGoals;
             }
 
-        void updateBall( const ball_detection_t &ball )
-        {
+        // void updateBall( const ball_detection_t &ball )
+        // {
 
-            // add the incoming balls to our vector of balls and mark the time
-            bool exists = false;
-            for ( auto &existing: balls )
-            {
-                if ( ball.id == existing.id )
-                    existing = ball;
-            }
+        //     // add the incoming balls to our vector of balls and mark the time
+        //     bool exists = false;
+        //     for ( auto &existing: balls )
+        //     {
+        //         if ( ball.id == existing.id )
+        //             existing = ball;
+        //     }
 
-            if ( !exists )
-                balls.push_back( ball );
-        }
+        //     if ( !exists )
+        //         balls.push_back( ball );
+        // }
 
         // TODO: Add multi-ball tracking
         void updateBalls(const ball_detections_t &newBalls )
@@ -83,7 +83,7 @@ class ArmPlanner
 
             for (size_t i = 0; i < newBalls.detections.size(); ++i)
             {
-                ball_detection_t detection = newBalls[i];
+                ball_detection_t detection = newBalls.detections[i];
                 if(balls.empty()) {
                     // chose detection closest to the arm 
                     if(minDist == -1 || sqrt(detection.position[0]*detection.position[0] + 
@@ -97,7 +97,7 @@ class ArmPlanner
                 else {
                     // chose the detection closest to previous ball
                     // TODO: Use a
-                    Vector2d prevBallPos = balls[0].predict_coordinate();
+                    Vector4d prevBallPos = balls[0].predict_coordinate(detection.utime);
 
                     if(minDist == -1) bestDetection = detection;
                     sqrt(detection.position[0]*detection.position[0] + 
@@ -107,8 +107,8 @@ class ArmPlanner
             }
 
             if(balls.empty()) { 
-                balls.push_back( Ball(bestDetection.id, bestDetection.utime,
-                    Eigen::Vector2d(bestDetection.position[0], bestDetection[1])) );
+                balls.push_back( Ball(0, bestDetection.color, bestDetection.utime,
+                    Eigen::Vector2d(bestDetection.position[0], bestDetection.position[1])) );
             }
             else {
                 balls[0].update(bestDetection);
@@ -133,13 +133,10 @@ class ArmPlanner
             }
 
         // project the ball out time seconds
-        Point < double > projectBall( Ball &ball, int64_t time )
-            {
-            Point< double > projection = ball.coordinate;
-            projection.x += ball.velocity.x * time;
-            projection.y += ball.velocity.y * time;
-            return projection;
-            }
+        Vector4d projectBall( Ball &ball, double time )
+        {
+            ball.predict_coordinate(time);
+        }
 
         // check to see if the ball will reach radius of us within
         // 2 seconds
@@ -160,57 +157,57 @@ class ArmPlanner
             return Point < double >( -0.05, 0.3 );
             }
 
-        std::pair < Point < double >, Point < double > > calculateWaypoints( Ball &ball, Point < double > &spot, Point < double > &goal )
-        {
-            // calculate the angle between the spot and goal
-            double thetaToGoal = calculateAngleRadians( Point < double >( 0.0, 0.0 ), Point< double >( 0.0, 0.5 );
-            double minimumVerticalVelocity = velocity.y / 3; // dependent on the elasticity of our putter
+        // std::pair < Point < double >, Point < double > > calculateWaypoints( Ball &ball, Point < double > &spot, Point < double > &goal )
+        // {
+        //     // calculate the angle between the spot and goal
+        //     double thetaToGoal = calculateAngleRadians( Point < double >( 0.0, 0.0 ), Point< double >( 0.0, 0.5 );
+        //     double minimumVerticalVelocity = velocity.y / 3; // dependent on the elasticity of our putter
 
             
-            // TODO remove these test overwrites when calculation is complete
-            Point < double > first( 0.1, 0.08 );
-            Point < double > second( 0.08, 0.15 );
-            return std::make_pair( first, second );
-        }
+        //     // TODO remove these test overwrites when calculation is complete
+        //     Point < double > first( 0.1, 0.08 );
+        //     Point < double > second( 0.08, 0.15 );
+        //     return std::make_pair( first, second );
+        // }
 
-        std::pair< Point < double >, Point < double > > calculatePlan( )
-        {
-            // Find closest ball
-            Ball * closest;
-            double closestDistance = DBL_MAX;
-            for ( auto &ball: balls )
-                {
-                double distance = sqrt ( ball.coordinate.x * ball.coordinate.x + ball.coordinate.y * ball.coordinate.y );
-                if ( distance < closestDistance )
-                    {
-                    closest = &ball;
-                    closestDistance = distance;
-                    }
-                }
+        // std::pair< Point < double >, Point < double > > calculatePlan( )
+        // {
+        //     // Find closest ball
+        //     Ball * closest;
+        //     double closestDistance = DBL_MAX;
+        //     for ( auto &ball: balls )
+        //         {
+        //         double distance = sqrt ( ball.coordinate.x() * ball.coordinate.x() + ball.coordinate.y() * ball.coordinate.y() );
+        //         if ( distance < closestDistance )
+        //             {
+        //             closest = &ball;
+        //             closestDistance = distance;
+        //             }
+        //         }
 
-            // Project the ball out between time intervals
-            Point< float > times = projectTimeToReach( *closest );
+        //     // Project the ball out between time intervals
+        //     Point< float > times = projectTimeToReach( *closest );
 
-            // a spot is a place to hit the ball from
-            double bestSpotScore = DBL_MAX;
-            Point < double > bestSpot;
-            // pick best place to hit ball between
-            for ( float interval = times.x;  interval <= times.y;  ++interval )
-                {
-                Point< double > spot = projectBall( *closest, interval );
-                double spotScore = ballSpotHeuristic( spot );
-                if ( spotScore < bestSpotScore )
-                    {
-                    bestSpot = spot;
-                    bestSpotScore = spotScore; 
-                    }
-                }
+        //     // a spot is a place to hit the ball from
+        //     double bestSpotScore = DBL_MAX;
+        //     Point < double > bestSpot;
+        //     // pick best place to hit ball between
+        //     for ( float interval = times.x;  interval <= times.y;  ++interval )
+        //         {
+        //         Point< double > spot = projectBall( *closest, interval );
+        //         double spotScore = ballSpotHeuristic( spot );
+        //         if ( spotScore < bestSpotScore )
+        //             {
+        //             bestSpot = spot;
+        //             bestSpotScore = spotScore; 
+        //             }
+        //         }
 
-            bestSpot = projectBall( *closest, times.x + ( times.y - times.x ) / 2 ); // TODO remove when decide on actual heuristic
+        //     bestSpot = projectBall( *closest, times.x + ( times.y - times.x ) / 2 ); // TODO remove when decide on actual heuristic
 
-            Point < double > goal = chooseGoal( *closest );
-            return calculateWaypoints( *closest, bestSpot, goal );
-        }
+        //     Point < double > goal = chooseGoal( *closest );
+        //     return calculateWaypoints( *closest, bestSpot, goal );
+        // }
 
 
         void publishArmPlan( std::vector < double > angles )

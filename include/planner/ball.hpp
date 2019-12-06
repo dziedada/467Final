@@ -9,6 +9,8 @@
 #include <opencv2/video/tracking.hpp>
 #include <Eigen/Core>
 #include <vector>
+#include <common/messages/ball_detections_t.hpp>
+#include <common/messages/ball_detection_t.hpp>
 
 using Eigen::Vector2d;
 using Eigen::Vector4d;
@@ -30,6 +32,7 @@ class Ball
 		std::vector<double> kf_error_history;
 
         friend class ArmPlanner;
+
 	public:
 		Ball( int id_, int col, int64_t time, Vector2d coord, Vector2d vel = Vector2d(0, 0) )
 				: id( id_ ), color( col ), utime( time ), coordinate( coord ),
@@ -41,7 +44,7 @@ class Ball
 			int contrSize = 0; // no control input
 			unsigned int type = CV_64F; // double type
 
-			kf = cv::KalmanFilter(stateSize, measSize, contrSize, type)
+			kf = cv::KalmanFilter(stateSize, measSize, contrSize, type);
 
 			state = Mat(stateSize, 1, type);  // [x,y,v_x,v_y]
     		meas = Mat(measSize, 1, type);    // [z_x,z_y]
@@ -107,9 +110,9 @@ class Ball
 	        this->coordinate_prediction = other.coordinate_prediction;
         }
 
-        Vector4d predict_coordinate(double utime)
+        Vector4d predict_coordinate(int64_t time)
         {
-        	double dT = (double)(detection.utime - utime) / (double)1000000;
+        	double dT = (double)(time - utime) / (double)1000000;
         	return predict_coordinate(dT);
         }
 
@@ -119,18 +122,21 @@ class Ball
 			// update Matrix A for correct velocity estimate 
 			kf.transitionMatrix.at<double>(2) = dT;
             kf.transitionMatrix.at<double>(7) = dT;
-            return kf.predict();
+            auto predState = kf.predict();
+
+            return Vector4d(predState.at<double>(0), predState.at<double>(1), 
+            			    predState.at<double>(2), predState.at<double>(3));
 		}
 
 
 		Vector2d getPos()
 		{
-			return Vector2d(state[0], state[1]);
+			return Vector2d(state.at<double>(0), state.at<double>(1));
 		}
 	};
 
-// Other Helper Functions ( trig )
-double calculateAngleRadians( Point < doube > &pt1, Point < double > &pt2 )
+// // Other Helper Functions ( trig )
+double calculateAngleRadians( Point < double > &pt1, Point < double > &pt2 )
     {
     return asin( ( pt1.x - pt2.x ) / ( pt2.y - pt1.y ) );
     }
