@@ -99,22 +99,22 @@ class Ball
 
         Ball operator=( const Ball &other )
         {
-        this->id = other.id;
-        this->color = other.color;
-        this->utime = other.utime;
-        this->coordinate = other.coordinate;
-        this->velocity = other.velocity;
-        this->coordinate_prediction = other.coordinate_prediction;
+	        this->id = other.id;
+	        this->color = other.color;
+	        this->utime = other.utime;
+	        this->coordinate = other.coordinate;
+	        this->velocity = other.velocity;
+	        this->coordinate_prediction = other.coordinate_prediction;
         }
 
-<<<<<<< HEAD
-		bool predict_coordinate( )
-			{
-			}
-        
-=======
+        Vector4d predict_coordinate(double utime)
+        {
+        	double dT = (double)(detection.utime - utime) / (double)1000000;
+        	return predict_coordinate(dT);
+        }
+
         // predict out the ball in dt seconds
-		Vector4d predict_coordinate( double dt )
+		Vector4d predict_coordinate( double dT)
 		{
 			// update Matrix A for correct velocity estimate 
 			kf.transitionMatrix.at<double>(2) = dT;
@@ -122,11 +122,11 @@ class Ball
             return kf.predict();
 		}
 
+
 		Vector2d getPos()
 		{
 			return Vector2d(state[0], state[1]);
 		}
->>>>>>> WIP: tracker
 	};
 
 // Other Helper Functions ( trig )

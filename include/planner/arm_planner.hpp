@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 #include <cfloat>
+#include <Eigen/Core>
 #include "ball.hpp"
 #include <lcm/lcm-cpp.hpp>
 #include <common/message_channels.hpp>
@@ -16,6 +17,8 @@
 #include <common/messages/ball_detections_t.hpp>
 #include <common/messages/ball_detection_t.hpp>
 
+using Eigen::Vector2d;
+using Eigen::Vector4d;
 
 class ArmPlanner
 	{
@@ -94,12 +97,12 @@ class ArmPlanner
                 else {
                     // chose the detection closest to previous ball
                     // TODO: Use a
-                    Ball prevBall = balls[0];
+                    Vector2d prevBallPos = balls[0].predict_coordinate();
 
                     if(minDist == -1) bestDetection = detection;
                     sqrt(detection.position[0]*detection.position[0] + 
                                     detection.position[1]*detection.position[1]);
-                    
+
                 }
             }
 
