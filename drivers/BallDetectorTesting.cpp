@@ -88,7 +88,6 @@ int main(int argc, char**argv)
     // Must set the sigHandlerImpl before setting signal handling
     signal(SIGINT, sigHandler);
     bool pre_transform_cloud = !config["ball_detector"]["plane_mask"].as<bool>();
-    cout << pre_transform_cloud << '\n';
     // Wait until someone tries to terminate the program
     while (running)
     {

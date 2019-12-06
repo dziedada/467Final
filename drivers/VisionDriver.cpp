@@ -177,7 +177,7 @@ CameraWrapper::CameraWrapper(const YAML::Node& config, const YAML::Node& root_co
     shared_ptr<ZCM> zcm_ptr) :
     interface_ {RealsenseInterface(config)}, zcm_ptr_ {zcm_ptr}, stay_alive_ {atomic_bool(true)},
     enabled_ {config["enabled"].as<bool>()}, 
-    ball_detector_ {BallDetector(config["ball_detector"])}, 
+    ball_detector_ {BallDetector(false, config["ball_detector"])}, 
     cloud_transformer_ {CloudTransformer(config)}
 {
 }
