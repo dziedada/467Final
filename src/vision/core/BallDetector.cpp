@@ -34,8 +34,6 @@ using std::vector;
 using std::shared_ptr;
 using std::numeric_limits;
 
-constexpr double HEIGHT_MIN = 0.009;
-constexpr double HEIGHT_MAX = 0.06;
 // const double BALL_RADIUS = 0.02133;
 constexpr double BALL_RADIUS_MIN = 0.016;
 constexpr double BALL_RADIUS_MAX = 0.04;
@@ -168,12 +166,34 @@ size_t BallPrototype::size() const
 // END BALL PROTOTYPE SECTION **********************************************************
 
 BallDetector::BallDetector(bool debug) : 
-    min_radius_ {BALL_RADIUS_MIN}, max_radius_ {BALL_RADIUS_MAX}, debug_ {debug} {}
+    debug_ {debug}, min_radius_ {BALL_RADIUS_MIN}, max_radius_ {BALL_RADIUS_MAX}, 
+    plane_mask_ {true}, x_min_ {-100}, x_max_ {100}, y_min_ {-100}, y_max_ {100}, 
+    z_min_ {0.009}, z_max_ {0.06} {}
+
 BallDetector::BallDetector() : BallDetector(false) {}
+
 BallDetector::BallDetector(float min_radius, float max_radius, bool debug) 
-    : min_radius_ {min_radius}, max_radius_ {max_radius}, debug_ {debug} {}
+    : debug_ {debug}, min_radius_ {min_radius}, max_radius_ {max_radius}, 
+    plane_mask_ {true}, x_min_ {-100}, x_max_ {100}, y_min_ {-100}, y_max_ {100}, 
+    z_min_ {0.009}, z_max_ {0.06} {}
+
 BallDetector::BallDetector(float min_radius, float max_radius) 
     : BallDetector(min_radius, max_radius, false) {} 
+
+BallDetector::BallDetector(bool debug, const YAML::Node& config) :
+    debug_ {debug},
+    min_radius_ {config["ball_radius_min"].as<float>()},
+    max_radius_ {config["ball_radius_max"].as<float>()},
+    plane_mask_ {config["plane_mask"].as<bool>()},
+    x_min_ {config["x_min"].as<float>()},
+    x_max_ {config["x_max"].as<float>()},
+    y_min_ {config["y_min"].as<float>()},
+    y_max_ {config["y_max"].as<float>()},
+    z_min_ {config["z_min"].as<float>()},
+    z_max_ {config["z_max"].as<float>()}
+{
+
+}
 
 vector<shared_ptr<BallPrototype> > prunePrototypes(
     vector<shared_ptr<BallPrototype> >& prototypes,
@@ -184,23 +204,33 @@ vector<shared_ptr<BallPrototype> > binPrototypes(
 vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallPrototype> >& prototypes,
     const BallDetector& detector);
 Mat maskByHeight(const Mat rgb, PointCloud<PointXYZ>::Ptr ordered_cloud, 
-    const MatrixXf& ground_coefs);
+    const MatrixXf& ground_coefs, BallDetector* self);
+Mat maskByConfig(const Mat rgb, PointCloud<PointXYZ>::Ptr ordered_cloud, BallDetector* self);
 ball_detections_t failure();
 
 ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unordered_cloud,
     PointCloud<PointXYZ>::Ptr ordered_cloud)
 {
-    // Plane Fitting to find height of points TODO Disable once extrinsic callibration is complete
-    MatrixXf ground_plane = fitPlane(unordered_cloud);
-    if (ground_plane.size() == 0)
-    {
-        if (debug_) cerr << "No ground coefficients...\n";
-        return failure();
-    }
-    // Mask out the pixels corresponding to points outside of the height range
     Mat hsv;
     cv::cvtColor(rgb, hsv, cv::COLOR_BGR2HSV);
-    Mat masked = maskByHeight(hsv, ordered_cloud, ground_plane);
+    Mat masked;
+    if (plane_mask_)
+    {
+        // Plane Fitting to find height of points TODO Disable once extrinsic callibration is complete
+        MatrixXf ground_plane = fitPlane(unordered_cloud);
+        if (ground_plane.size() == 0)
+        {
+            if (debug_) cerr << "No ground coefficients...\n";
+            return failure();
+        }
+        // Mask out the pixels corresponding to points outside of the height range
+        masked = maskByHeight(hsv, ordered_cloud, ground_plane, this);
+    }
+    else
+    {
+        masked = maskByConfig(hsv, ordered_cloud, this);
+    }
+    
     // Color Detection
     Mat green_masked;
     Mat orange_masked;
@@ -429,7 +459,7 @@ vector<shared_ptr<BallPrototype> > fitSpheres(const vector<shared_ptr<BallProtot
 }
 
 Mat maskByHeight(const Mat rgb, PointCloud<PointXYZ>::Ptr ordered_cloud, 
-    const MatrixXf& ground_coefs)
+    const MatrixXf& ground_coefs, BallDetector* self)
 {
     if (static_cast<uint32_t>(rgb.cols) != ordered_cloud->width || 
         static_cast<uint32_t>(rgb.rows) != ordered_cloud->height)
@@ -456,7 +486,7 @@ Mat maskByHeight(const Mat rgb, PointCloud<PointXYZ>::Ptr ordered_cloud,
                                     plane_z * point.z +
                                     plane_d);
             double height = numerator / denominator;
-            if (height < HEIGHT_MIN || height > HEIGHT_MAX) mask.at<uchar>(cv::Point(x, y)) = 0;
+            if (height < self->z_min_ || height > self->z_max_) mask.at<uchar>(cv::Point(x, y)) = 0;
             else 
             {
                 mask.at<uchar>(cv::Point(x, y)) = 1;
@@ -465,6 +495,36 @@ Mat maskByHeight(const Mat rgb, PointCloud<PointXYZ>::Ptr ordered_cloud,
                 // cout << static_cast<int>(pixel[0]) << ", " << static_cast<int>(pixel[1]) << ", " 
                 //     << static_cast<int>(pixel[2]) << '\n';
             }
+        }
+    }
+    Mat masked(rgb.rows, rgb.cols, rgb.type(), cv::Scalar(0, 0, 0));
+    rgb.copyTo(masked, mask);
+    return masked;
+}
+
+Mat maskByConfig(const Mat rgb, PointCloud<PointXYZ>::Ptr ordered_cloud, BallDetector* self)
+{
+    if (static_cast<uint32_t>(rgb.cols) != ordered_cloud->width || 
+        static_cast<uint32_t>(rgb.rows) != ordered_cloud->height)
+    {
+        cerr << "Error: ordered_cloud and rgb image must have same dimensions!!!" << endl;
+        exit(1);
+    }
+    Mat mask(rgb.rows, rgb.cols, CV_8UC1);
+    // Compute denominator because only depends on plane
+    for (size_t y = 0; y < ordered_cloud->height; ++y)
+    {
+        for (size_t x = 0; x < ordered_cloud->width; ++x)
+        {
+            const PointXYZ& point = ordered_cloud->operator()(x, y);
+            if (point.z < self->z_min_ || point.z > self->z_max_) 
+                mask.at<uchar>(cv::Point(x, y)) = 0;
+            else if (point.x < self->x_min_ || point.x > self->x_max_) 
+                mask.at<uchar>(cv::Point(x, y)) = 0;
+            else if (point.y < self->y_min_ || point.y > self->y_max_) 
+                mask.at<uchar>(cv::Point(x, y)) = 0;
+            else 
+                mask.at<uchar>(cv::Point(x, y)) = 1;
         }
     }
     Mat masked(rgb.rows, rgb.cols, rgb.type(), cv::Scalar(0, 0, 0));
@@ -524,5 +584,4 @@ MatrixXf BallDetector::fitPlane(PointCloud<PointXYZ>::Ptr cloud)
     }
     return MatrixXf(0, 0);  // No coefficients, return failure
 }
-
 
