@@ -22,6 +22,7 @@ class StateMachine():
         self.next_state = "idle"
         self.test = 0
         self.togo = []
+        self.togo_angles = []
         self.speed_norm = 1.0
         self.togo_lock = threading.Lock()
         self.lc = lcm.LCM()
@@ -44,8 +45,11 @@ class StateMachine():
         self.togo_lock.acquire()
         self.speed_norm = copy.deepcopy(msg.speed)
         self.togo = copy.deepcopy(msg.waypoints)
+        self.togo_angles = copy.deepcopy(msg.angles)
         if len(self.togo) >= 1:
-            self.next_state = "move"
+            self.next_state = "move_positions"
+        elif len(self.togo_angles):
+            self.next_state = "move_angles"
         self.togo_lock.release()
         #print(msg.waypoints)
 
@@ -72,10 +76,13 @@ class StateMachine():
                 self.estop()
             if(self.next_state == "calibrate"):
                 self.calibrate()
-            if(self.next_state == "move"):
-                self.move()
+            if(self.next_state == "move_positions"):
+                self.move_positions()
+            if(self.next_state == "move_angles"):
+                self.move_angles()
 
-        if(self.current_state == "move"):
+
+        if(self.current_state == "move_positions"):
             if(self.next_state == "manual"):
                 self.manual()
             if(self.next_state == "idle"):
@@ -84,8 +91,24 @@ class StateMachine():
                 self.estop()
             if(self.next_state == "calibrate"):
                 self.calibrate()
-            if(self.next_state == "move"):
-                self.move()
+            if(self.next_state == "move_positions"):
+                self.move_positions()
+            if(self.next_state == "move_angles"):
+                self.move_angles()
+
+        if(self.current_state == "move_angles"):
+            if(self.next_state == "manual"):
+                self.manual()
+            if(self.next_state == "idle"):
+                self.idle()
+            if(self.next_state == "estop"):
+                self.estop()
+            if(self.next_state == "calibrate"):
+                self.calibrate()
+            if(self.next_state == "move_positions"):
+                self.move_positions()
+            if(self.next_state == "move_angles"):
+                self.move_angles()
                 
         if(self.current_state == "estop"):
             self.next_state = "estop"
@@ -108,28 +131,27 @@ class StateMachine():
         self.rexarm.send_commands()
         self.rexarm.get_feedback()
 
-    def move(self):
+    def move_positions(self):
         self.status_message = "State: Move - move to a target point"
-        self.current_state = "move"
+        self.current_state = "move_positions"
         self.togo_lock.acquire()
         while len(self.togo):
             target = self.togo.pop(0)
             angles = IK((target[0], target[1], 0))
             if angles:
-                # consider clamping
-                # if angles[2] < 0 or self.rexarm.joint_angles_fb[2] < 0:
-                #     if angles[2] < -160 and self.rexarm.joint_angles_fb[2] > 0:
-                #         angles2 = copy.deepcopy(angles)
-                #         anglse2[2] = 180
-                #         self.rexarm.move_to_target_angles(angles2)
-                # angles[2] = -angles[2] + 2 * (np.pi + angles[2])  
-                #print(angles)
-                # if angles[2] < -160 / 180 * np.pi:
-                #     angles2 = copy.deepcopy(angles)
-                #     angles2[2] = np.pi
-                #     self.rexarm.move_to_target_angles(angles2)
-                # else:
                 self.rexarm.move_to_target_angles(angles, self.speed_norm, False)
+        self.next_state = "idle"
+        self.togo_lock.release()
+
+    def move_angles(self):
+        self.status_message = "State: Move - move to a target point"
+        self.current_state = "move_angles"
+        self.togo_lock.acquire()
+        while len(self.togo_angles):
+            target = self.togo_angles.pop(0)
+            #angles = IK((target[0], target[1], 0))
+            if target:
+                self.rexarm.move_to_target_angles(target, self.speed_norm, False)
         self.next_state = "idle"
         self.togo_lock.release()
 
