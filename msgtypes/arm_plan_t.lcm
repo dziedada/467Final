@@ -1,0 +1,16 @@
+/**
+ * LCM type for controlling arm path
+ */
+struct arm_plan_t
+{
+    double bicep_angle_init;
+    double elbow_angle_init;
+    double end_angle_init;
+
+    double bicep_angle_end;
+    double bicep_speed
+    double elbow_angle_end;
+    double elbow_speed;
+    double start_elbow_angle;
+    double end_angle;
+}

@@ -4,6 +4,7 @@
  */
 
 #include <common/point.hpp>
+#include <cmath>
 
 class Ball
 	{
@@ -37,4 +38,11 @@ class Ball
 		bool predict_coordinate( )
 			{
 			}
+        
 	};
+
+// Other Helper Functions ( trig )
+double calculateAngleRadians( Point < doube > &pt1, Point < double > &pt2 )
+    {
+    return asin( ( pt1.x - pt2.x ) / ( pt2.y - pt1.y ) );
+    }

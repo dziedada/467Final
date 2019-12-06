@@ -26,6 +26,10 @@ class ArmPlanner
         double armInnerRadius = 0.100;
         double armOuterRadius = 0.175;
 
+        Point < double > armBase( 0.0, 0.0 );
+        double bicepJointLength = 0.1;
+        double elbowJointLength = 0.1;
+
 	public:
 		ArmPlanner( )
 			{
@@ -85,23 +89,6 @@ class ArmPlanner
         // check to see if the ball will reach radius of us within
         // 2 seconds
         // give a range of the start end of reachable 
-        Point< float > projectTimeToReach( Ball &ball )
-            {
-            float start = -1, end = 2;
-            for ( float interval = 0.0;  interval < 2.0;  interval += 0.05 )
-                {
-                Point< double > projection = projectBall( ball, convertSecondsToUTime( interval ) );
-
-                if ( start == -1 && distanceToBase( projection ) < armOuterRadius )
-                    {
-                    start = interval;
-                    }
-                else if ( start != -1 && distanceToBase( projection ) < armInnerRadius )
-                    {
-                    end = interval - 0.05; 
-                    }
-                }
-            }
 
         double ballSpotHeuristic( Point < double > spot )
             {
@@ -115,12 +102,17 @@ class ArmPlanner
 
         Point < double > chooseGoal ( Ball &ball )
             {
-            return Point < double >( 0.0, 0.0 );
+            return Point < double >( -0.05, 0.3 );
             }
 
         std::pair < Point < double >, Point < double > > calculateWaypoints( Ball &ball, Point < double > &spot, Point < double > &goal )
             {
             // calculate the angle between the spot and goal
+            double thetaToGoal = calculateAngleRadians( Point < double >( 0.0, 0.0 ), Point< double >( 0.0, 0.5 );
+            double minimumVerticalVelocity = velocity.y / 3; // dependent on the elasticity of our putter
+
+            
+            // TODO remove these test overwrites when calculation is complete
             Point < double > first( 0.1, 0.08 );
             Point < double > second( 0.08, 0.15 );
             return std::make_pair( first, second );
@@ -159,16 +151,21 @@ class ArmPlanner
                     }
                 }
 
+            bestSpot = projectBall( *closest, times.x + ( times.y - times.x ) / 2 ); // TODO remove when decide on actual heuristic
+
             Point < double > goal = chooseGoal( *closest );
             return calculateWaypoints( *closest, bestSpot, goal );
             }
 
 
+        void publishArmPlan( std::vector < double > angles )
+            {
+            }
+
         void publishPlan( std::pair < Point < double >, Point < double > > &pr )
             {
             arm_path_t path;
             path.waypoints_num = 1;
-
 
             path.waypoints[0][0] = pr.first.x;
             path.waypoints[0][1] = pr.first.y;
