@@ -38,6 +38,8 @@ CloudTransformer::CloudTransformer(const YAML::Node& config)
 
 PointXYZ CloudTransformer::transform(const PointXYZ& point)
 {
+    // Skip points that we don't have information for
+    if (point.x == 0 && point.y == 0 && point.z == 0) return point;
     Vector4f vec(point.x, point.y, point.z, 1);
     Vector4f result = transform_matrix_ * vec;
     return PointXYZ(result[0], result[1], result[2]);
@@ -45,8 +47,8 @@ PointXYZ CloudTransformer::transform(const PointXYZ& point)
 
 PointCloud<PointXYZ>::Ptr CloudTransformer::transform(PointCloud<PointXYZ>::Ptr cloud)
 {
-    PointCloud<PointXYZ>::Ptr output(new PointCloud<PointXYZ>());
-    *output = *cloud;
+    PointCloud<PointXYZ>::Ptr output(new PointCloud<PointXYZ>(cloud->width, cloud->height,
+        PointXYZ(0, 0, 0)));
     if (cloud->isOrganized())
     {
         for (size_t y = 0; y < cloud->height; ++y)
@@ -64,14 +66,13 @@ PointCloud<PointXYZ>::Ptr CloudTransformer::transform(PointCloud<PointXYZ>::Ptr 
             output->operator[](i) = transform(cloud->operator[](i));
         }
     }
-    // pcl::transformPointCloud (*cloud, *output, transform_matrix_);
+    // PCL Function can't be used due to (0, 0, 0) points
     return output;
 }
 
 PointCloud<PointXYZ> CloudTransformer::transform(const PointCloud<PointXYZ>& cloud)
 {
-    PointCloud<PointXYZ> output;
-    output = cloud;
+    PointCloud<PointXYZ> output(cloud.width, cloud.height, PointXYZ(0, 0, 0));
     if (cloud.isOrganized())
     {
         for (size_t y = 0; y < cloud.height; ++y)
@@ -89,7 +90,7 @@ PointCloud<PointXYZ> CloudTransformer::transform(const PointCloud<PointXYZ>& clo
             output.operator[](i) = transform(cloud.operator[](i));
         }
     }
-    // pcl::transformPointCloud (cloud, output, transform_matrix_);
+    // PCL Function can't be used due to (0, 0, 0) points
     return output;
 }
 
