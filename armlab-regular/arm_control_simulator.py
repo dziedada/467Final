@@ -32,12 +32,12 @@ def use_arm_path_t():
 	msg.waypoints = [[0.1, 0.05]]
 	lc = lcm.LCM()
 	lc.publish("ARM_PATH", msg.encode())
-	time.sleep(3)
+	time.sleep(4)
 	msg.waypoints_num = num - 1
 	msg.waypoints = []
 	for i in range(1, num):
 		msg.waypoints.append([0.1, inter[i]])
-	msg.waypoints = [[0, 0.19]]
+	msg.waypoints = [[0.1, 0.17]]
 	lc.publish("ARM_PATH", msg.encode())
 
 def test():
@@ -56,12 +56,12 @@ def use_new_arm_path_t():
 	msg.speed = 1
 	msg.angles_num = 1
 	#msg.waypoints = [[0.1, inter[0]]]
-	msg.angles = [[- np.pi / 2, np.pi / 3, 0, np.pi / 2]]
+	msg.angles = [[- np.pi / 2, np.pi / 3, np.pi / 3, 0]]
 	
 	lc = lcm.LCM()
 	lc.publish("ARM_PATH", msg.encode())
 	time.sleep(3)
-	msg.angles = [[- np.pi / 2, -np.pi / 3, 0, np.pi / 2]]
+	msg.angles = [[- np.pi / 2, -np.pi / 3, -np.pi / 3, 0]]
 	lc.publish("ARM_PATH", msg.encode())
 
 def main():
