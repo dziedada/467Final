@@ -23,6 +23,10 @@ class arm_path_t
 
         std::vector< std::vector< double > > waypoints;
 
+        int32_t    angles_num;
+
+        std::vector< std::vector< double > > angles;
+
         double     speed;
 
     public:
@@ -129,6 +133,14 @@ int arm_path_t::_encodeNoHash(void *buf, int offset, int maxlen) const
         if(tlen < 0) return tlen; else pos += tlen;
     }
 
+    tlen = __int32_t_encode_array(buf, offset + pos, maxlen - pos, &this->angles_num, 1);
+    if(tlen < 0) return tlen; else pos += tlen;
+
+    for (int a0 = 0; a0 < this->angles_num; a0++) {
+        tlen = __double_encode_array(buf, offset + pos, maxlen - pos, &this->angles[a0][0], 4);
+        if(tlen < 0) return tlen; else pos += tlen;
+    }
+
     tlen = __double_encode_array(buf, offset + pos, maxlen - pos, &this->speed, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
@@ -151,6 +163,18 @@ int arm_path_t::_decodeNoHash(const void *buf, int offset, int maxlen)
         }
     }
 
+    tlen = __int32_t_decode_array(buf, offset + pos, maxlen - pos, &this->angles_num, 1);
+    if(tlen < 0) return tlen; else pos += tlen;
+
+    this->angles.resize(this->angles_num);
+    for (int a0 = 0; a0 < this->angles_num; a0++) {
+        if(4) {
+            this->angles[a0].resize(4);
+            tlen = __double_decode_array(buf, offset + pos, maxlen - pos, &this->angles[a0][0], 4);
+            if(tlen < 0) return tlen; else pos += tlen;
+        }
+    }
+
     tlen = __double_decode_array(buf, offset + pos, maxlen - pos, &this->speed, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
@@ -162,13 +186,15 @@ int arm_path_t::_getEncodedSizeNoHash() const
     int enc_size = 0;
     enc_size += __int32_t_encoded_array_size(NULL, 1);
     enc_size += this->waypoints_num * __double_encoded_array_size(NULL, 2);
+    enc_size += __int32_t_encoded_array_size(NULL, 1);
+    enc_size += this->angles_num * __double_encoded_array_size(NULL, 4);
     enc_size += __double_encoded_array_size(NULL, 1);
     return enc_size;
 }
 
 uint64_t arm_path_t::_computeHash(const __lcm_hash_ptr *)
 {
-    uint64_t hash = 0xb035843bfa4ee381LL;
+    uint64_t hash = 0x862583ddf13963cfLL;
     return (hash<<1) + ((hash>>63)&1);
 }
 

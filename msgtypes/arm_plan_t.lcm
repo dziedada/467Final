@@ -8,7 +8,7 @@ struct arm_plan_t
     double end_angle_init;
 
     double bicep_angle_end;
-    double bicep_speed
+    double bicep_speed;
     double elbow_angle_end;
     double elbow_speed;
     double start_elbow_angle;
