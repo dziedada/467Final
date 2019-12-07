@@ -52,15 +52,19 @@ public:
 
         planner->updateBalls( *ball );
 
+        if(planner->balls.empty()) return;
         std::vector<Vector2d> plan = planner->calculatePlan( );
+        /*
         auto pos =  planner->balls[0].getPos();
         cout << pos << '\n';
         cout << " calculated Plan at " << endl;
-        //planner.publishPlan( plan );
+        planner.publishPlan( plan );
+        */
     }
     
 private:
     shared_ptr<ArmPlanner> planner;
+    int64_t prevTime = 0;
 };
 
 // Handles lcm in a loop until program no longer running
