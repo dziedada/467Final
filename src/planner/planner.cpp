@@ -13,6 +13,7 @@
 #include <common/point.hpp>
 #include <planner/arm_planner.hpp>
 #include <lcm/lcm-cpp.hpp>
+#include <Eigen/Core>
 
 using std::cout;
 using std::endl;
@@ -36,7 +37,7 @@ class Handler
 
             planner.updateBalls( *ball );
 
-            //pair< Point < double >, Point < double > > plan = planner.calculatePlan( );
+            std::vector<Vector2d> plan = planner.calculatePlan( );
             //planner.publishPlan( plan );
             }
         
@@ -61,7 +62,7 @@ int main( int argc, char ** argv )
     sleep( 2 );
 
     arm_path_t path;
-    path.waypoints_num = 1;
+    path.waypoints_num = 2;
     vector< vector< double > > waypoints( 2, vector< double >( 2, 0 ) );
     waypoints[0][0] = 0.1;
     waypoints[0][1] = 0.08;

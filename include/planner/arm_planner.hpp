@@ -142,7 +142,7 @@ class ArmPlanner
         // 2 seconds
         // give a range of the start end of reachable 
 
-        double ballSpotHeuristic( Point < double > spot )
+        double ballSpotHeuristic( Vector4d spot )
             {
             return 1.0;
             }
@@ -152,62 +152,62 @@ class ArmPlanner
             return 1.0;
             }
 
-        Point < double > chooseGoal ( Ball &ball )
+        Vector2d chooseGoal ( Ball &ball )
             {
-            return Point < double >( -0.05, 0.3 );
+            return Vector2d( -0.05, 0.3 );
             }
 
-        // std::pair < Point < double >, Point < double > > calculateWaypoints( Ball &ball, Point < double > &spot, Point < double > &goal )
-        // {
-        //     // calculate the angle between the spot and goal
-        //     double thetaToGoal = calculateAngleRadians( Point < double >( 0.0, 0.0 ), Point< double >( 0.0, 0.5 );
-        //     double minimumVerticalVelocity = velocity.y / 3; // dependent on the elasticity of our putter
+        std::vector<Vector2d> calculateWaypoints( Ball &ball, Vector4d &spot, Vector2d &goal )
+        {
+            // calculate the angle between the spot and goal
+            Vector2d spotPos = Vector2d(spot.x(), spot.y());
+            // double thetaToGoal = calculateAngleRadians( Point < double >( 0.0, 0.0 ), Point< double >( 0.0, 0.5 );
+            auto vecToGoal = (goal - spotPos);
+            double thetaToGoal = atan(vecToGoal.y() / vecToGoal.x());
+            double minimumVerticalVelocity = spot[3] / 3; // dependent on the elasticity of our putter
 
+            return {spotPos};
+        }   
+
+        std::vector<Vector2d> calculatePlan( )
+        {
+            // Find closest ball
+            Ball * closest;
+            double closestDistance = DBL_MAX;
+            for ( auto &ball: balls )
+                {
+                double distance = ball.getPos().norm();
+                if ( distance < closestDistance )
+                    {
+                    closest = &ball;
+                    closestDistance = distance;
+                    }
+                }
+
+            // TODO: 
+            // Project the ball out between time intervals
+            std::pair<double, double> times = closest->projectTimeToReach(armOuterRadius, armInnerRadius);
+
+            // a spot is a place to hit the ball from
+            double bestSpotScore = DBL_MAX;
+            Vector4d bestSpot;
             
-        //     // TODO remove these test overwrites when calculation is complete
-        //     Point < double > first( 0.1, 0.08 );
-        //     Point < double > second( 0.08, 0.15 );
-        //     return std::make_pair( first, second );
-        // }
+            // pick best place to hit ball between
+            float step = (times.first - times.second) / 10.0;
+            for ( float interval = times.first;  interval <= times.second; ++step )
+                {
+                Vector4d spot = closest->predict_coordinate((double)interval);
+                double spotScore = ballSpotHeuristic( spot );
+                if ( spotScore < bestSpotScore )
+                    {
+                    bestSpot = spot;
+                    bestSpotScore = spotScore; 
+                    }
+                }
 
-        // std::pair< Point < double >, Point < double > > calculatePlan( )
-        // {
-        //     // Find closest ball
-        //     Ball * closest;
-        //     double closestDistance = DBL_MAX;
-        //     for ( auto &ball: balls )
-        //         {
-        //         double distance = sqrt ( ball.coordinate.x() * ball.coordinate.x() + ball.coordinate.y() * ball.coordinate.y() );
-        //         if ( distance < closestDistance )
-        //             {
-        //             closest = &ball;
-        //             closestDistance = distance;
-        //             }
-        //         }
-
-        //     // Project the ball out between time intervals
-        //     Point< float > times = projectTimeToReach( *closest );
-
-        //     // a spot is a place to hit the ball from
-        //     double bestSpotScore = DBL_MAX;
-        //     Point < double > bestSpot;
-        //     // pick best place to hit ball between
-        //     for ( float interval = times.x;  interval <= times.y;  ++interval )
-        //         {
-        //         Point< double > spot = projectBall( *closest, interval );
-        //         double spotScore = ballSpotHeuristic( spot );
-        //         if ( spotScore < bestSpotScore )
-        //             {
-        //             bestSpot = spot;
-        //             bestSpotScore = spotScore; 
-        //             }
-        //         }
-
-        //     bestSpot = projectBall( *closest, times.x + ( times.y - times.x ) / 2 ); // TODO remove when decide on actual heuristic
-
-        //     Point < double > goal = chooseGoal( *closest );
-        //     return calculateWaypoints( *closest, bestSpot, goal );
-        // }
+            Vector2d goal = chooseGoal( *closest );
+            return calculateWaypoints( *closest, bestSpot, goal );
+        }
 
 
         void publishArmPlan( std::vector < double > angles )

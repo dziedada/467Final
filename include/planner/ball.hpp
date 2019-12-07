@@ -9,6 +9,7 @@
 #include <opencv2/video/tracking.hpp>
 #include <Eigen/Core>
 #include <vector>
+#include <utility>
 #include <common/messages/ball_detections_t.hpp>
 #include <common/messages/ball_detection_t.hpp>
 
@@ -117,6 +118,7 @@ class Ball
         }
 
         // predict out the ball in dt seconds
+        // TODO refactor to predict state
 		Vector4d predict_coordinate( double dT)
 		{
 			// update Matrix A for correct velocity estimate 
@@ -128,15 +130,30 @@ class Ball
             			    predState.at<double>(2), predState.at<double>(3));
 		}
 
+		// check to see if the ball will reach radius of us within
+		// 2 seconds
+		// give a range of the start end of reachable
+		std::pair<double, double> projectTimeToReach(double outerradius, double innerradius)
+		{
+			float start = -1, end = 2;
+			for ( float interval = 0.0;  interval < 1.5;  interval += 0.05 )
+			{
+			    Vector4d stateProj = predict_coordinate( (double)interval );
+			    Vector2d projection = Vector2d(stateProj.x(), stateProj.y());
+			    if ( start == -1 && projection.norm() < outerradius )
+		        {
+		        	start = interval;
+		        }
+			    else if ( start != -1 &&  projection.norm() < innerradius )
+		        {
+		        	end = interval - 0.05;  
+		        }
+			}
+			return std::make_pair(start, end);  
+		}
 
 		Vector2d getPos()
 		{
 			return Vector2d(state.at<double>(0), state.at<double>(1));
 		}
 	};
-
-// // Other Helper Functions ( trig )
-double calculateAngleRadians( Point < double > &pt1, Point < double > &pt2 )
-    {
-    return asin( ( pt1.x - pt2.x ) / ( pt2.y - pt1.y ) );
-    }
