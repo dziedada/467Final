@@ -37,17 +37,16 @@ class Handler
 
                 cout << " update received at " << planner.convertUTimeToSeconds(ball->utime - prevTime) << endl;
 
-                //planner.updateBalls( *ball );
+                planner.updateBalls( *ball );
 
-                // std::vector<Vector2d> plan = planner.calculatePlan( );
-                // if(planner.balls.empty()) return;
+                std::vector<Vector2d> plan = planner.calculatePlan( );
+                if(planner.balls.empty()) return;
 
-                // auto pos =  planner.balls[0].getPos();
-                // cout << pos << endl;
-                // cout << " calculated Plan at " << endl;
+                /*auto pos =  planner.balls[0].getPos();
+                cout << pos << endl;
+                cout << " calculated Plan at " << endl;*/
 
-                //planner.publishPlan( plan );
-
+                // planner.publishPlan( plan );
             }
         
     private:

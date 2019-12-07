@@ -87,7 +87,7 @@ class ArmPlanner
             for (size_t i = 0; i < newBalls.detections.size(); ++i)
             {
                 ball_detection_t detection = newBalls.detections[i];
-                Eigen::Vector2d ballPosition( detection.position[0], detection.position[1] );
+                Eigen::Vector2d detectionPosition( detection.position[0], detection.position[1] );
 
                 Ball * closest;
                 double closestDistance = DBL_MAX;
@@ -101,12 +101,12 @@ class ArmPlanner
 
                     Eigen::Vector4d predictionState = ball.predict_coordinate( detection.utime );
                     Eigen::Vector2d prediction( predictionState.x(), predictionState.y() );
-                    double distance = (prediction - ballPosition).norm();
-                    std::cout << "Ball " << ballPosition.x() << " " << ballPosition.y() << std::endl;
-                    std::cout << "Prediction " << prediction.x() << " " << prediction.y() << std::endl;
-                    std::cout << "Distance " << distance;
+                    double distance = (prediction - detectionPosition).norm();
                     if ( distance < corrThreshold && distance < closestDistance )
                         {
+                        std::cout << "Detection " << detectionPosition.x() << " " << detectionPosition.y() << std::endl;
+                        //std::cout << "Prediction " << prediction.x() << " " << prediction.y() << std::endl;
+                        std::cout << "Distance " << distance << std::endl;
                         closest = &ball;
                         closestDistance = distance;
                         }
@@ -130,6 +130,7 @@ class ArmPlanner
                     if ( (*it).odds < -10 )
                         {
                         // purge ball
+                        std::cout << "Purged ball... " << balls.size() << " left";
                         it = balls.erase( it );
                         }
                     else

@@ -8,3 +8,4 @@ thirdparty/Qt5
 qt-*
 scripts/install
 armlab-regular/env/
+*.jlp
