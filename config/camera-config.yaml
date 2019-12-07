@@ -79,7 +79,7 @@ calibration:
   max_ball_radius: 0.04
 
 ball_detector:
-  plane_mask: false
+  plane_mask: true
   x_min: -100
   x_max: 100
   y_min: -100

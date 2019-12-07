@@ -29,6 +29,7 @@ target_link_libraries(vision-driver
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
     ${ZCM_LIBRARIES}
+    ${LCM_LIBRARIES}
     ${YAMLCPP_LIBRARY}
     CameraInterface
     VisionUtils
