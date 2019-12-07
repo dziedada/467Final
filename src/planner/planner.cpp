@@ -38,7 +38,11 @@ class Handler
             planner.updateBalls( *ball );
 
             std::vector<Vector2d> plan = planner.calculatePlan( );
+            auto pos =  planner.balls[0].getPos();
+            cout << pos << endl;
+            cout << " calculated Plan at " << endl;
             //planner.publishPlan( plan );
+
             }
         
     private:
@@ -56,23 +60,23 @@ int main( int argc, char ** argv )
     cout << " - Completetd LCM initialization" << endl;
     Handler handler;
     cout << " - Created Handler object" << endl;
-    //lcm.subscribe( "ARM_PATH", &Handler::handleEKFMessage, &handler );
+    lcm.subscribe( "BALL_DETECTIONS", &Handler::handleEKFMessage, &handler );
     cout << " - Subscribed to ARM_PATH" << endl;
 
-    sleep( 2 );
+    // sleep( 2 );
 
-    arm_path_t path;
-    path.waypoints_num = 2;
-    vector< vector< double > > waypoints( 2, vector< double >( 2, 0 ) );
-    waypoints[0][0] = 0.1;
-    waypoints[0][1] = 0.08;
-    waypoints[1][0] = 0.08;
-    waypoints[1][1] = 0.15;
-    path.waypoints = waypoints;
-    path.angles_num = 0;
-    std::vector<std::vector<double>> vec( 0, vector<double>( 0, 0 ) );
-    path.angles = vec;
-    path.speed = 1;
+    // arm_path_t path;
+    // path.waypoints_num = 2;
+    // vector< vector< double > > waypoints( 2, vector< double >( 2, 0 ) );
+    // waypoints[0][0] = 0.1;
+    // waypoints[0][1] = 0.08;
+    // waypoints[1][0] = 0.08;
+    // waypoints[1][1] = 0.15;
+    // path.waypoints = waypoints;
+    // path.angles_num = 0;
+    // std::vector<std::vector<double>> vec( 0, vector<double>( 0, 0 ) );
+    // path.angles = vec;
+    // path.speed = 1;
     
     lcm.publish( "ARM_PATH", &path );
 

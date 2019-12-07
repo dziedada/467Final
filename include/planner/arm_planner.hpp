@@ -23,7 +23,7 @@ using Eigen::Vector4d;
 
 class ArmPlanner
 	{
-	private:
+	public:
 		std::vector< Point < double > > goals;
 		std::vector< Ball > balls;
         
@@ -81,6 +81,7 @@ class ArmPlanner
                 emptyFrames = 0;
             }
 
+            std::cout << "detected: " << newBalls.detections.size() << std::endl;
             for (size_t i = 0; i < newBalls.detections.size(); ++i)
             {
                 ball_detection_t detection = newBalls.detections[i];
@@ -171,6 +172,7 @@ class ArmPlanner
 
         std::vector<Vector2d> calculatePlan( )
         {
+            if(balls.empty()) return std::vector<Vector2d>();
             // Find closest ball
             Ball * closest;
             double closestDistance = DBL_MAX;
@@ -193,8 +195,8 @@ class ArmPlanner
             Vector4d bestSpot;
             
             // pick best place to hit ball between
-            float step = (times.first - times.second) / 10.0;
-            for ( float interval = times.first;  interval <= times.second; ++step )
+            float stepSize = (times.second - times.first) / 10.0;
+            for ( float interval = times.first;  interval <= times.second; interval += stepSize )
                 {
                 Vector4d spot = closest->predict_coordinate((double)interval);
                 double spotScore = ballSpotHeuristic( spot );

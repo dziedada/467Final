@@ -13,6 +13,9 @@
 #include <common/messages/ball_detections_t.hpp>
 #include <common/messages/ball_detection_t.hpp>
 
+#include <iostream>
+using std::cout;
+using std::endl;
 using Eigen::Vector2d;
 using Eigen::Vector4d;
 using cv::Mat;
@@ -125,7 +128,7 @@ class Ball
 			kf.transitionMatrix.at<double>(2) = dT;
             kf.transitionMatrix.at<double>(7) = dT;
             auto predState = kf.predict();
-
+            //cout << "dx " << predState.at<double>(2) << " dy " << predState.at<double>(3) << endl;
             return Vector4d(predState.at<double>(0), predState.at<double>(1), 
             			    predState.at<double>(2), predState.at<double>(3));
 		}
