@@ -78,7 +78,7 @@ int main( int argc, char ** argv )
     // path.angles = vec;
     // path.speed = 1;
     
-    lcm.publish( "ARM_PATH", &path );
+    //lcm.publish( "ARM_PATH", &path );
 
     while ( 0 == lcm.handle( ) );
 

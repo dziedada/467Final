@@ -81,10 +81,68 @@ class ArmPlanner
                 emptyFrames = 0;
             }
 
+            double corrThreshold = 0.1;
+            std::vector< Ball * > corresponded;
             std::cout << "detected: " << newBalls.detections.size() << std::endl;
             for (size_t i = 0; i < newBalls.detections.size(); ++i)
             {
                 ball_detection_t detection = newBalls.detections[i];
+                Eigen::Vector2d ballPosition( detection.position[0], detection.position[1] );
+
+                Ball * closest;
+                double closestDistance = DBL_MAX;
+                for ( auto &ball: balls )
+                {
+                    if ( corresponded.end() == std::find( corresponded.cbegin(), corresponded.cend(), &ball ) ||
+                        ball.color != detection.color )
+                    {
+                        continue;
+                    }
+
+                    Eigen::Vector4d predictionState = ball.predict_coordinate( detection.utime );
+                    Eigen::Vector2d prediction( predictionState.x(), predictionState.y() );
+                    double distance = (prediction - ballPosition).norm();
+                    if ( distance < corrThreshold && distance < closestDistance )
+                        {
+                        closest = &ball;
+                        closestDistance = distance;
+                        }
+                }
+                if ( closestDistance == DBL_MAX )
+                {
+                    balls.push_back( Ball( 0, detection.color, detection.utime, Eigen::Vector2d( detection.position[0], detection.position[1] ) ) );
+                }
+                else 
+                {
+                    closest->update( detection );
+                    corresponded.push_back( closest );
+                }
+            }
+            
+            for( auto it = balls.begin(); it != balls.end(); )
+            {
+                if ( corresponded.end() == std::find( corresponded.cbegin(), corresponded.cend(), &*it ) )
+                {
+                    if ( (*it).odds < -10 )
+                        {
+                        // purge ball
+                        it = balls.erase( it );
+                        }
+                    else
+                        {
+                        (*it).odds -= -1;
+                        ++it;
+                        }
+                }
+                else
+                {
+                    ++it;
+                }
+            }
+
+
+
+                /*
                 if(balls.empty()) {
                     // chose detection closest to the arm 
                     if(minDist == -1 || sqrt(detection.position[0]*detection.position[0] + 
@@ -104,16 +162,14 @@ class ArmPlanner
                     sqrt(detection.position[0]*detection.position[0] + 
                                     detection.position[1]*detection.position[1]);
 
-                }
-            }
-
-            if(balls.empty()) { 
+                }*/
+            /*if(balls.empty()) { 
                 balls.push_back( Ball(0, bestDetection.color, bestDetection.utime,
                     Eigen::Vector2d(bestDetection.position[0], bestDetection.position[1])) );
             }
             else {
                 balls[0].update(bestDetection);
-            }
+            }*/
         }
 
            

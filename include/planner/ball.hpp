@@ -26,6 +26,7 @@ class Ball
 		int id;
 		int color;
 		int64_t utime; // previous utime
+        int odds; // odds we think this ball is fake news
         // int64_t inputTime; // EKF system utime
 		Vector2d coordinate;					// ( x, y )
 		Vector2d velocity;					// ( v_x, v_y )
@@ -39,8 +40,8 @@ class Ball
 
 	public:
 		Ball( int id_, int col, int64_t time, Vector2d coord, Vector2d vel = Vector2d(0, 0) )
-				: id( id_ ), color( col ), utime( time ), coordinate( coord ),
-				  velocity( vel )
+				: id( id_ ), color( col ), utime( time ), odds( 0 ),
+                coordinate( coord ), velocity( vel )
 		{
 			// initialize a kalman filter
 			int stateSize = 4; // [x, y, v_x, v_y]
@@ -78,6 +79,7 @@ class Ball
 
 		void update(const ball_detection_t &detection)
 		{
+            odds += 1;
 			double dT = (double)(detection.utime - utime) / (double)1000000;
 			utime = detection.utime;
 
