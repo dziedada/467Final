@@ -99,7 +99,7 @@ def check_valid(pose):
 
     return True
 
-def IK(pose):
+def IK(pose, mode):
     """
     467TODO: implement this function
 
@@ -121,27 +121,44 @@ def IK(pose):
     
     A = np.arccos((upperarm_len ** 2 + target_len ** 2 - forearm_len ** 2) / (2 * upperarm_len * target_len))
     if y == 0.0:
-        theta0 = - (np.pi / 2 + A)
+        theta0_1 = - (np.pi / 2 + A)
     else:
-        theta0 = - (np.arctan(abs(x / y)) + A)
+        theta0_1 = - (np.arctan(abs(x / y)) + A)
+    theta0_2 = theta0_1 + 2 * A
+
     B = np.arccos((upperarm_len ** 2 + forearm_len ** 2 - target_len ** 2) / (2 * upperarm_len * forearm_len))    
-    theta1 = math.pi - B
+    theta1_1 = math.pi - B
+    theta1_2 = -theta1_1
+
     if x < 0:
-        theta0 = -theta0
-        theta1 = -theta1
+        theta0_1 = -theta0_1
+        theta0_2 = -theta0_2
+        theta1_1 = -theta1_1
+        theta1_2 = -theta1_2
     # theta1 += math.pi / 2
     # if theta1 > math.pi:
     #     theta1 -= 2 * math.pi
     # print(A * R2D, B * R2D, theta0 * R2D, theta1 * R2D)    
     # check valid:
-    if theta0 > angle_max * D2R or theta0 < angle_min * D2R:
+    if theta0_1 > angle_max * D2R or theta0_1 < angle_min * D2R or \
+    theta0_2 > angle_max * D2R or theta0_2 < angle_min * D2R:
         print(pose, " is out of upperarm's reach")
         return None
-    if theta1 > angle_max * D2R and theta1 < angle_min * D2R:
+    if theta1_1 > angle_max * D2R and theta1_1 < angle_min * D2R or \
+        theta1_2 > angle_max * D2R and theta1_2 < angle_min * D2R:
         print(pose, " is out of forearm's reach")
         return None
-    return [-math.pi / 2, theta0, theta1]
 
+    if mode == 1:
+        if x >= 0.0:
+            return [-math.pi / 2, theta0_1, theta1_1, 0]
+        else:
+            return [-math.pi / 2, theta0_2, theta1_2, 0]
+    else:
+        if x >= 0.0:
+            return [-math.pi / 2, theta0_2, theta1_2, 0]
+        else:
+            return [-math.pi / 2, theta0_1, theta1_1, 0]
 
 def get_euler_angles_from_T(T):
     """

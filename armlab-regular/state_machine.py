@@ -138,7 +138,7 @@ class StateMachine():
         self.togo_lock.acquire()
         while len(self.togo):
             target = self.togo.pop(0)
-            angles = IK((target[0], target[1], 0))
+            angles = IK((target[0], target[1], 0), target[2])
             if angles:
                 self.rexarm.move_to_target_angles(angles, self.speed_norm, False)
         self.next_state = "idle"

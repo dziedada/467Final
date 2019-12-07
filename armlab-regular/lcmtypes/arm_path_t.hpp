@@ -73,13 +73,13 @@ class arm_path_t
         inline int _encodeNoHash(void *buf, int offset, int maxlen) const;
         inline int _getEncodedSizeNoHash() const;
         inline int _decodeNoHash(const void *buf, int offset, int maxlen);
-        inline static int64_t _computeHash(const __lcm_hash_ptr *p);
+        inline static uint64_t _computeHash(const __lcm_hash_ptr *p);
 };
 
 int arm_path_t::encode(void *buf, int offset, int maxlen) const
 {
     int pos = 0, tlen;
-    int64_t hash = getHash();
+    int64_t hash = (int64_t)getHash();
 
     tlen = __int64_t_encode_array(buf, offset + pos, maxlen - pos, &hash, 1);
     if(tlen < 0) return tlen; else pos += tlen;
@@ -129,7 +129,7 @@ int arm_path_t::_encodeNoHash(void *buf, int offset, int maxlen) const
     if(tlen < 0) return tlen; else pos += tlen;
 
     for (int a0 = 0; a0 < this->waypoints_num; a0++) {
-        tlen = __double_encode_array(buf, offset + pos, maxlen - pos, &this->waypoints[a0][0], 2);
+        tlen = __double_encode_array(buf, offset + pos, maxlen - pos, &this->waypoints[a0][0], 3);
         if(tlen < 0) return tlen; else pos += tlen;
     }
 
@@ -156,9 +156,9 @@ int arm_path_t::_decodeNoHash(const void *buf, int offset, int maxlen)
 
     this->waypoints.resize(this->waypoints_num);
     for (int a0 = 0; a0 < this->waypoints_num; a0++) {
-        if(2) {
-            this->waypoints[a0].resize(2);
-            tlen = __double_decode_array(buf, offset + pos, maxlen - pos, &this->waypoints[a0][0], 2);
+        if(3) {
+            this->waypoints[a0].resize(3);
+            tlen = __double_decode_array(buf, offset + pos, maxlen - pos, &this->waypoints[a0][0], 3);
             if(tlen < 0) return tlen; else pos += tlen;
         }
     }
@@ -185,16 +185,16 @@ int arm_path_t::_getEncodedSizeNoHash() const
 {
     int enc_size = 0;
     enc_size += __int32_t_encoded_array_size(NULL, 1);
-    enc_size += this->waypoints_num * __double_encoded_array_size(NULL, 2);
+    enc_size += this->waypoints_num * __double_encoded_array_size(NULL, 3);
     enc_size += __int32_t_encoded_array_size(NULL, 1);
     enc_size += this->angles_num * __double_encoded_array_size(NULL, 4);
     enc_size += __double_encoded_array_size(NULL, 1);
     return enc_size;
 }
 
-int64_t arm_path_t::_computeHash(const __lcm_hash_ptr *)
+uint64_t arm_path_t::_computeHash(const __lcm_hash_ptr *)
 {
-    int64_t hash = 0x862583ddf13963cfLL;
+    uint64_t hash = 0x79da7c220ec69bcfLL;
     return (hash<<1) + ((hash>>63)&1);
 }
 

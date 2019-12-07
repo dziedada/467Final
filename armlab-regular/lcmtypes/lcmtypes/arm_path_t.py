@@ -28,7 +28,7 @@ class arm_path_t(object):
     def _encode_one(self, buf):
         buf.write(struct.pack(">i", self.waypoints_num))
         for i0 in range(self.waypoints_num):
-            buf.write(struct.pack('>2d', *self.waypoints[i0][:2]))
+            buf.write(struct.pack('>3d', *self.waypoints[i0][:3]))
         buf.write(struct.pack(">i", self.angles_num))
         for i0 in range(self.angles_num):
             buf.write(struct.pack('>4d', *self.angles[i0][:4]))
@@ -49,7 +49,7 @@ class arm_path_t(object):
         self.waypoints_num = struct.unpack(">i", buf.read(4))[0]
         self.waypoints = []
         for i0 in range(self.waypoints_num):
-            self.waypoints.append(struct.unpack('>2d', buf.read(16)))
+            self.waypoints.append(struct.unpack('>3d', buf.read(24)))
         self.angles_num = struct.unpack(">i", buf.read(4))[0]
         self.angles = []
         for i0 in range(self.angles_num):
@@ -61,7 +61,7 @@ class arm_path_t(object):
     _hash = None
     def _get_hash_recursive(parents):
         if arm_path_t in parents: return 0
-        tmphash = (0x862583ddf13963cf) & 0xffffffffffffffff
+        tmphash = (0x79da7c220ec69bcf) & 0xffffffffffffffff
         tmphash  = (((tmphash<<1)&0xffffffffffffffff)  + (tmphash>>63)) & 0xffffffffffffffff
         return tmphash
     _get_hash_recursive = staticmethod(_get_hash_recursive)
