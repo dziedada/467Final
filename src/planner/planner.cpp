@@ -74,9 +74,8 @@ int main( int argc, char ** argv )
     path.speed = 1;
     
     lcm.publish( "ARM_PATH", &path );
-    //while(true);
 
-    //while ( 0 == lcm.handle( ) );
+    while ( 0 == lcm.handle( ) );
 
     return 0;
 	}

@@ -215,7 +215,7 @@ int arm_plan_t::_getEncodedSizeNoHash() const
 
 int64_t arm_plan_t::_computeHash(const __lcm_hash_ptr *)
 {
-    int64_t hash = 0xad0fbb7edfdde504LL;
+    uint64_t hash = 0xad0fbb7edfdde504LL;
     return (hash<<1) + ((hash>>63)&1);
 }
 
