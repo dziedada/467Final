@@ -41,6 +41,7 @@ class StateMachine():
         #print(msg.position)
 
     def arm_path_handler(self, channel, data):
+        print("recv arm path")
         msg = arm_path_t.decode(data)
         self.togo_lock.acquire()
         self.speed_norm = copy.deepcopy(msg.speed)
@@ -50,16 +51,6 @@ class StateMachine():
             self.next_state = "move_positions"
         elif len(self.togo_angles):
             self.next_state = "move_angles"
-        self.togo_lock.release()
-        #print(msg.waypoints)
-
-    def arm_path_handler(self, channel, data):
-        msg = arm_path_t.decode(data)
-        self.togo_lock.acquire()
-        self.speed_norm = copy.deepcopy(msg.speed)
-        self.togo = copy.deepcopy(msg.waypoints)
-        if len(self.togo) >= 1:
-            self.next_state = "move"
         self.togo_lock.release()
         #print(msg.waypoints)
 

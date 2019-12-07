@@ -55,7 +55,7 @@ int main( int argc, char ** argv )
     cout << " - Completetd LCM initialization" << endl;
     Handler handler;
     cout << " - Created Handler object" << endl;
-    lcm.subscribe( "ARM_PATH", &Handler::handleEKFMessage, &handler );
+    //lcm.subscribe( "ARM_PATH", &Handler::handleEKFMessage, &handler );
     cout << " - Subscribed to ARM_PATH" << endl;
 
     sleep( 2 );
@@ -74,8 +74,9 @@ int main( int argc, char ** argv )
     path.speed = 1;
     
     lcm.publish( "ARM_PATH", &path );
+    //while(true);
 
-    while ( 0 == lcm.handle( ) );
+    //while ( 0 == lcm.handle( ) );
 
     return 0;
 	}
