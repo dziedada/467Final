@@ -511,7 +511,6 @@ Mat maskByConfig(const Mat rgb, PointCloud<PointXYZ>::Ptr ordered_cloud, BallDet
         exit(1);
     }
     Mat mask(rgb.rows, rgb.cols, CV_8UC1);
-    // Compute denominator because only depends on plane
     for (size_t y = 0; y < ordered_cloud->height; ++y)
     {
         for (size_t x = 0; x < ordered_cloud->width; ++x)
