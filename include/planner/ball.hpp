@@ -82,6 +82,22 @@ class Ball
 
 		    // Measures Noise Covariance Matrix R
     		cv::setIdentity(kf.measurementNoiseCov, cv::Scalar(1e-1));
+
+
+    		// First detection!
+            // >>>> Initialization of Prior
+            kf.errorCovPre.at<double>(0) = 1e-2; // 1 cm
+            kf.errorCovPre.at<double>(5) = 1e-2; // 1 cm
+            kf.errorCovPre.at<double>(10) = 1e-2;
+            kf.errorCovPre.at<double>(15) = 1e-2;
+
+            state.at<double>(0) = coord.x();
+            state.at<double>(1) = coord.y();
+            state.at<double>(2) = vel.x();
+            state.at<double>(3) = vel.y();
+            // <<<< Initialization
+
+            kf.statePost = state;    
 		}
 
 		void update(const ball_detection_t &detection)
