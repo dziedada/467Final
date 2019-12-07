@@ -42,6 +42,8 @@ const cv::Scalar GREEN_MIN(32, 60, 30);
 const cv::Scalar GREEN_MAX(71, 255, 255);
 const cv::Scalar ORANGE_MIN(0, 150, 30);
 const cv::Scalar ORANGE_MAX(23, 255, 255);
+const cv::Scalar BLUE_MIN(90, 150, 30);
+const cv::Scalar BLUE_MAX(127.5, 255, 255);
 
 const Mat FILL_KERNEL = cv::getStructuringElement(cv::MORPH_RECT,
     cv::Size(3, 3));
@@ -234,19 +236,25 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     // Color Detection
     Mat green_masked;
     Mat orange_masked;
+    Mat blue_masked;
     Mat green_mask;
     Mat orange_mask;
+    Mat blue_mask;
 
     // Fill due to the holes from the new point clouds
     cv::inRange(masked, GREEN_MIN, GREEN_MAX, green_masked);
     cv::inRange(masked, ORANGE_MIN, ORANGE_MAX, orange_masked);
+    cv::inRange(masked, BLUE_MIN, BLUE_MAX, blue_masked);
     cv::threshold(green_masked, green_mask, 0.0, 1.0, cv::THRESH_BINARY);
     cv::threshold(orange_masked, orange_mask, 0.0, 1.0, cv::THRESH_BINARY);
+    cv::threshold(blue_masked, blue_mask, 0.0, 1.0, cv::THRESH_BINARY);
 
     cv::dilate(green_mask, green_mask, FILL_KERNEL);
     cv::erode(green_mask, green_mask, FILL_KERNEL);
     cv::dilate(orange_mask, orange_mask, FILL_KERNEL);
     cv::erode(orange_mask, orange_mask, FILL_KERNEL);
+    cv::dilate(blue_mask, blue_mask, FILL_KERNEL);
+    cv::erode(blue_mask, blue_mask, FILL_KERNEL);
 
     cv::erode(green_mask, green_mask, EROSION_KERNEL);
     cv::dilate(green_mask, green_mask, DILATION_KERNEL);
@@ -254,6 +262,9 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     cv::erode(orange_mask, orange_mask, EROSION_KERNEL);
     cv::dilate(orange_mask, orange_mask, DILATION_KERNEL);
     cv::erode(orange_mask, orange_mask, EROSION_KERNEL_2);
+    cv::erode(blue_mask, blue_mask, EROSION_KERNEL);
+    cv::dilate(blue_mask, blue_mask, DILATION_KERNEL);
+    cv::erode(blue_mask, blue_mask, EROSION_KERNEL_2);
     // Extract Detected masses of color and create BallPrototypes
     uint8_t curr_label = 2;
     vector<shared_ptr<BallPrototype> > prototypes;
@@ -288,6 +299,7 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
     };
     extractPrototypes(green_mask, color::Green);
     extractPrototypes(orange_mask, color::Orange);
+    extractPrototypes(blue_mask, color::Blue);
     // Combine prototypes of the same color that are nearby
     prototypes = binPrototypes(prototypes, *this);
     // Remove prototypes of different colors that are too close to others based on num points
@@ -315,13 +327,17 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
         cv::namedWindow("Masked", cv::WINDOW_AUTOSIZE);
         cv::namedWindow("Green Masked", cv::WINDOW_AUTOSIZE);
         cv::namedWindow("Orange Masked", cv::WINDOW_AUTOSIZE);
+        cv::namedWindow("Blue Masked", cv::WINDOW_AUTOSIZE);
         cv::namedWindow("Green Final", cv::WINDOW_AUTOSIZE);
         cv::namedWindow("Orange Final", cv::WINDOW_AUTOSIZE);
+        cv::namedWindow("Blue Final", cv::WINDOW_AUTOSIZE);
         cv::namedWindow("Detections", cv::WINDOW_AUTOSIZE);
         Mat green_vis;
         Mat orange_vis;
+        Mat blue_vis;
         cv::threshold(green_mask, green_vis, 0.0, 254.0, cv::THRESH_BINARY);
         cv::threshold(orange_mask, orange_vis, 0.0, 254.0, cv::THRESH_BINARY);
+        cv::threshold(blue_mask, blue_vis, 0.0, 254.0, cv::THRESH_BINARY);
         Mat detection_image = rgb.clone();
         for (auto& prototype : complete_prototypes)
         {
@@ -331,8 +347,10 @@ ball_detections_t BallDetector::detect(Mat rgb, PointCloud<PointXYZ>::Ptr unorde
         imshow("Masked", masked);
         imshow("Green Masked", green_masked);
         imshow("Orange Masked", orange_masked);
+        imshow("Blue Masked", blue_masked);
         imshow("Green Final", green_vis);
         imshow("Orange Final", orange_vis);
+        imshow("Blue Final", blue_vis);
         imshow("Detections", detection_image);
         cv::waitKey(0);
     };

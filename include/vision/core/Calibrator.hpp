@@ -19,6 +19,7 @@ private:
     void compute_extrinsics();
     Eigen::Vector3f green_ball_ground_truth_;
     Eigen::Vector3f orange_ball_ground_truth_;
+    Eigen::Vector3f blue_ball_ground_truth_;
     int num_samples_needed_;
     int current_num_samples_;
     BallDetector detector_;
@@ -27,5 +28,6 @@ private:
     std::vector<Eigen::MatrixXf> plane_coefficients_;
     std::vector<ball_detection_t> green_ball_detections_;
     std::vector<ball_detection_t> orange_ball_detections_;
+    std::vector<ball_detection_t> blue_ball_detections_;
 };
 

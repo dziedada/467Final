@@ -41,15 +41,21 @@ Calibrator::Calibrator(const YAML::Node& config) :
         config["orange_ground_truth"]["y"].as<float>(),
         config["orange_ground_truth"]["z"].as<float>()
     )},
+    blue_ball_ground_truth_ {Vector3f(
+        config["blue_ground_truth"]["x"].as<float>(),
+        config["blue_ground_truth"]["y"].as<float>(),
+        config["blue_ground_truth"]["z"].as<float>()
+    )},
     num_samples_needed_ {config["num_samples_required"].as<int>()},
     current_num_samples_ {0},
     detector_ {BallDetector(config["min_ball_radius"].as<float>(),
                             config["max_ball_radius"].as<float>())},
     current_num_iterations_ {0}
 {
-    plane_coefficients_.reserve(static_cast<size_t>(num_samples_needed_));
-    green_ball_detections_.reserve(static_cast<size_t>(num_samples_needed_));
-    orange_ball_detections_.reserve(static_cast<size_t>(num_samples_needed_));
+    plane_coefficients_.reserve(static_cast<size_t>(num_samples_needed_ * 2));
+    green_ball_detections_.reserve(static_cast<size_t>(num_samples_needed_ * 2));
+    orange_ball_detections_.reserve(static_cast<size_t>(num_samples_needed_ * 2));
+    blue_ball_detections_.reserve(static_cast<size_t>(num_samples_needed_ * 2));
 }
 
 
@@ -64,6 +70,7 @@ void Calibrator::add_sample(cv::Mat rgb,
     {
         if (detection.color == color::Green) green_ball_detections_.push_back(detection);
         else if (detection.color == color::Orange) orange_ball_detections_.push_back(detection);
+        else if (detection.color == color::Blue) blue_ball_detections_.push_back(detection);
     }
     MatrixXf coefs = detector_.fitPlane(unordered_cloud);
     if (coefs.size() != 0) plane_coefficients_.push_back(coefs);
@@ -209,6 +216,7 @@ void Calibrator::compute_extrinsics()
     const double _ball_radius = this->detector_.max_radius_;
     ball_detection_t green_centroid = filter_detections(green_ball_detections_, _ball_radius);
     ball_detection_t orange_centroid = filter_detections(orange_ball_detections_, _ball_radius);
+    ball_detection_t blue_centroid = filter_detections(blue_ball_detections_, _ball_radius);
     // Compute the height from the plane coefficients
     // Compute the roll and pitch from the plane coefficients
     vector<float> heights; heights.reserve(num_samples_needed_);
@@ -322,10 +330,13 @@ void Calibrator::compute_extrinsics()
     ball_detection_t original_orange_centroid = orange_centroid;
     green_centroid = linear_transform_ball(x_z_and_coord, green_centroid);
     orange_centroid = linear_transform_ball(x_z_and_coord, orange_centroid);
+    blue_centroid = linear_transform_ball(x_z_and_coord, blue_centroid);
     cout << "green centroid: " << green_centroid.position[0] << ' ' 
         << green_centroid.position[1] << ' ' << green_centroid.position[2] << '\n';
     cout << "orange centroid: " << orange_centroid.position[0] << ' ' 
         << orange_centroid.position[1] << ' ' << orange_centroid.position[2] << '\n';
+    cout << "blue centroid: " << blue_centroid.position[0] << ' ' 
+        << blue_centroid.position[1] << ' ' << blue_centroid.position[2] << '\n';
     // Compute the yaw using the angle of the line connecting the balls
     Vector3f connector = 
         Vector3f(green_centroid.position[0], green_centroid.position[1], 
@@ -340,6 +351,7 @@ void Calibrator::compute_extrinsics()
     // Apply the yaw fix
     green_centroid = linear_transform_ball(yaw_rot, green_centroid);
     orange_centroid = linear_transform_ball(yaw_rot, orange_centroid);
+    blue_centroid = linear_transform_ball(yaw_rot, blue_centroid);
     // Compute the horizontal translations using the rotation adjusted ball positions
     float x_diff = (
         (green_ball_ground_truth_[0] - green_centroid.position[0]) +
@@ -349,10 +361,15 @@ void Calibrator::compute_extrinsics()
         (green_ball_ground_truth_[1] - green_centroid.position[1]) +
         (orange_ball_ground_truth_[1] - orange_centroid.position[1])
         ) / 2;
+    float z_diff = (
+        (green_ball_ground_truth_[2] - green_centroid.position[2]) +
+        (orange_ball_ground_truth_[2] - orange_centroid.position[2]) +
+        (blue_ball_ground_truth_[2] - blue_centroid.position[2])
+        ) / 3;
     // Create the rotation matrix
     Matrix3f rotation_matrix = yaw_rot * x_z_and_coord;
     // Create the translation vector
-    Vector3f translation(x_diff, y_diff, filtered_height);
+    Vector3f translation(x_diff, y_diff, z_diff);
     // Print out the results of the computations
     ball_detection_t transformed_green = linear_transform_ball(rotation_matrix, 
         original_green_centroid);

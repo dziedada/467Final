@@ -75,6 +75,10 @@ calibration:
     x: 0.758
     y: -0.22
     z: 0.021
+  blue_ground_truth: # Only z matters for now
+    x: 0.0
+    y: 0.0
+    z: 0.021
   min_ball_radius: 0.011
   max_ball_radius: 0.04
 
