@@ -69,7 +69,7 @@ class ArmPlanner
             ball_detection_t bestDetection;
 
             // handle if the ball is a new ball
-            if(newBalls.detections.empty())
+            /*if(newBalls.detections.empty())
             {
                 emptyFrames++;
                 return;
@@ -79,7 +79,7 @@ class ArmPlanner
                 // TODO: Make configurable
                 if(emptyFrames > 100) { balls.clear(); }
                 emptyFrames = 0;
-            }
+            }*/
 
             double corrThreshold = 0.1;
             std::vector< Ball * > corresponded;
@@ -93,7 +93,7 @@ class ArmPlanner
                 double closestDistance = DBL_MAX;
                 for ( auto &ball: balls )
                 {
-                    if ( corresponded.end() == std::find( corresponded.cbegin(), corresponded.cend(), &ball ) ||
+                    if ( corresponded.end() != std::find( corresponded.cbegin(), corresponded.cend(), &ball ) ||
                         ball.color != detection.color )
                     {
                         continue;
@@ -102,6 +102,9 @@ class ArmPlanner
                     Eigen::Vector4d predictionState = ball.predict_coordinate( detection.utime );
                     Eigen::Vector2d prediction( predictionState.x(), predictionState.y() );
                     double distance = (prediction - ballPosition).norm();
+                    std::cout << "Ball " << ballPosition.x() << " " << ballPosition.y() << std::endl;
+                    std::cout << "Prediction " << prediction.x() << " " << prediction.y() << std::endl;
+                    std::cout << "Distance " << distance;
                     if ( distance < corrThreshold && distance < closestDistance )
                         {
                         closest = &ball;
@@ -179,12 +182,12 @@ class ArmPlanner
              
         float convertUTimeToSeconds( int64_t utime )
             {
-            return static_cast< float > ( utime ) / 10e9;
+            return static_cast< float > ( utime ) / 10e6;
             }
 
         int64_t convertSecondsToUTime( float seconds )
             {
-            return static_cast< int64_t > ( seconds * 10e9 );
+            return static_cast< int64_t > ( seconds * 10e6 );
             }
 
         double distanceToBase( Point< double > pt )

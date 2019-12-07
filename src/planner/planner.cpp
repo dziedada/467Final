@@ -33,20 +33,26 @@ class Handler
 
         void handleEKFMessage( const lcm::ReceiveBuffer *rbuf, const std::string &channel, const ball_detections_t *ball )
             {
-            cout << " update received at " << ball->utime << endl;
+                if(prevTime == 0 ) prevTime = ball->utime;
 
-            planner.updateBalls( *ball );
+                cout << " update received at " << planner.convertUTimeToSeconds(ball->utime - prevTime) << endl;
 
-            std::vector<Vector2d> plan = planner.calculatePlan( );
-            auto pos =  planner.balls[0].getPos();
-            cout << pos << endl;
-            cout << " calculated Plan at " << endl;
-            //planner.publishPlan( plan );
+                //planner.updateBalls( *ball );
+
+                // std::vector<Vector2d> plan = planner.calculatePlan( );
+                // if(planner.balls.empty()) return;
+
+                // auto pos =  planner.balls[0].getPos();
+                // cout << pos << endl;
+                // cout << " calculated Plan at " << endl;
+
+                //planner.publishPlan( plan );
 
             }
         
     private:
         ArmPlanner planner;
+        int64_t prevTime = 0;
     };
 
 int main( int argc, char ** argv )
