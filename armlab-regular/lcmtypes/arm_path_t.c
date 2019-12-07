@@ -7,9 +7,9 @@
 #include "arm_path_t.h"
 
 static int __arm_path_t_hash_computed;
-static int64_t __arm_path_t_hash;
+static uint64_t __arm_path_t_hash;
 
-int64_t __arm_path_t_hash_recursive(const __lcm_hash_ptr *p)
+uint64_t __arm_path_t_hash_recursive(const __lcm_hash_ptr *p)
 {
     const __lcm_hash_ptr *fp;
     for (fp = p; fp != NULL; fp = fp->parent)
@@ -21,7 +21,7 @@ int64_t __arm_path_t_hash_recursive(const __lcm_hash_ptr *p)
     cp.v = (void*)__arm_path_t_get_hash;
     (void) cp;
 
-    int64_t hash = (int64_t)0x862583ddf13963cfLL
+    uint64_t hash = (uint64_t)0x79da7c220ec69bcfLL
          + __int32_t_hash_recursive(&cp)
          + __double_hash_recursive(&cp)
          + __int32_t_hash_recursive(&cp)
@@ -35,7 +35,7 @@ int64_t __arm_path_t_hash_recursive(const __lcm_hash_ptr *p)
 int64_t __arm_path_t_get_hash(void)
 {
     if (!__arm_path_t_hash_computed) {
-        __arm_path_t_hash = __arm_path_t_hash_recursive(NULL);
+        __arm_path_t_hash = (int64_t)__arm_path_t_hash_recursive(NULL);
         __arm_path_t_hash_computed = 1;
     }
 
@@ -44,7 +44,8 @@ int64_t __arm_path_t_get_hash(void)
 
 int __arm_path_t_encode_array(void *buf, int offset, int maxlen, const arm_path_t *p, int elements)
 {
-    int pos = 0, thislen, element;
+    int pos = 0, element;
+    int thislen;
 
     for (element = 0; element < elements; element++) {
 
@@ -53,7 +54,7 @@ int __arm_path_t_encode_array(void *buf, int offset, int maxlen, const arm_path_
 
         { int a;
         for (a = 0; a < p[element].waypoints_num; a++) {
-            thislen = __double_encode_array(buf, offset + pos, maxlen - pos, p[element].waypoints[a], 2);
+            thislen = __double_encode_array(buf, offset + pos, maxlen - pos, p[element].waypoints[a], 3);
             if (thislen < 0) return thislen; else pos += thislen;
         }
         }
@@ -98,7 +99,7 @@ int __arm_path_t_encoded_array_size(const arm_path_t *p, int elements)
 
         { int a;
         for (a = 0; a < p[element].waypoints_num; a++) {
-            size += __double_encoded_array_size(p[element].waypoints[a], 2);
+            size += __double_encoded_array_size(p[element].waypoints[a], 3);
         }
         }
 
@@ -153,7 +154,7 @@ int arm_path_t_get_field(const arm_path_t *p, int i, lcm_field_t *f)
             f->typestr = "double";
             f->num_dim = 2;
             f->dim_size[0] = p->waypoints_num;
-            f->dim_size[1] = 2;
+            f->dim_size[1] = 3;
             f->dim_is_variable[0] = 1;
             f->dim_is_variable[1] = 0;
             f->data = (void *) &p->waypoints;
@@ -225,8 +226,8 @@ int __arm_path_t_decode_array(const void *buf, int offset, int maxlen, arm_path_
         p[element].waypoints = (double**) lcm_malloc(sizeof(double*) * p[element].waypoints_num);
         { int a;
         for (a = 0; a < p[element].waypoints_num; a++) {
-            p[element].waypoints[a] = (double*) lcm_malloc(sizeof(double) * 2);
-            thislen = __double_decode_array(buf, offset + pos, maxlen - pos, p[element].waypoints[a], 2);
+            p[element].waypoints[a] = (double*) lcm_malloc(sizeof(double) * 3);
+            thislen = __double_decode_array(buf, offset + pos, maxlen - pos, p[element].waypoints[a], 3);
             if (thislen < 0) return thislen; else pos += thislen;
         }
         }
@@ -259,7 +260,7 @@ int __arm_path_t_decode_array_cleanup(arm_path_t *p, int elements)
 
         { int a;
         for (a = 0; a < p[element].waypoints_num; a++) {
-            __double_decode_array_cleanup(p[element].waypoints[a], 2);
+            __double_decode_array_cleanup(p[element].waypoints[a], 3);
             if (p[element].waypoints[a]) free(p[element].waypoints[a]);
         }
         }
@@ -312,8 +313,8 @@ int __arm_path_t_clone_array(const arm_path_t *p, arm_path_t *q, int elements)
         q[element].waypoints = (double**) lcm_malloc(sizeof(double*) * q[element].waypoints_num);
         { int a;
         for (a = 0; a < p[element].waypoints_num; a++) {
-            q[element].waypoints[a] = (double*) lcm_malloc(sizeof(double) * 2);
-            __double_clone_array(p[element].waypoints[a], q[element].waypoints[a], 2);
+            q[element].waypoints[a] = (double*) lcm_malloc(sizeof(double) * 3);
+            __double_clone_array(p[element].waypoints[a], q[element].waypoints[a], 3);
         }
         }
 

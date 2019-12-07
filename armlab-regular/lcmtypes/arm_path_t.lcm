@@ -4,7 +4,8 @@
 struct arm_path_t
 {
 	int32_t waypoints_num;
-	double waypoints[waypoints_num][2];
+	// the third value is mode: 1 or 2
+	double waypoints[waypoints_num][3];
 	int32_t angles_num;
 	double angles[angles_num][4]; 
 	double speed;

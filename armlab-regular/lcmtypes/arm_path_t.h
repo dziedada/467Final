@@ -140,7 +140,7 @@ const lcm_type_info_t *arm_path_t_get_type_info(void);
 
 // LCM support functions. Users should not call these
 int64_t __arm_path_t_get_hash(void);
-int64_t __arm_path_t_hash_recursive(const __lcm_hash_ptr *p);
+uint64_t __arm_path_t_hash_recursive(const __lcm_hash_ptr *p);
 int     __arm_path_t_encode_array(void *buf, int offset, int maxlen, const arm_path_t *p, int elements);
 int     __arm_path_t_decode_array(const void *buf, int offset, int maxlen, arm_path_t *p, int elements);
 int     __arm_path_t_decode_array_cleanup(arm_path_t *p, int elements);
