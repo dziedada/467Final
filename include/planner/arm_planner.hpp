@@ -60,7 +60,7 @@ class ArmPlanner
         //     if ( !exists )
         //         balls.push_back( ball );
         // }
-
+        int currentId = 0;
         // TODO: Add multi-ball tracking
         void updateBalls(const ball_detections_t &newBalls )
         {
@@ -110,7 +110,8 @@ class ArmPlanner
                 }
                 if ( closestDistance == DBL_MAX )
                 {
-                    balls.push_back( Ball( 0, detection.color, detection.utime, Eigen::Vector2d( detection.position[0], detection.position[1] ) ) );
+                    balls.push_back( Ball( currentId, detection.color, detection.utime, Eigen::Vector2d( detection.position[0], detection.position[1] ) ) );
+                    ++currentId;
                 }
                 else 
                 {
@@ -139,6 +140,8 @@ class ArmPlanner
                     ++it;
                 }
             }
+
+            std::cout << "corresponded: " << balls.size() << std::endl;
 
 
 
