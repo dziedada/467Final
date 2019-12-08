@@ -83,13 +83,15 @@ int main(int argc, char ** argv)
     bool view_display = false;
     if (argc > 1 && !strcmp(argv[1], GUI_FLAG)) view_display = true;
 
-    // Create planner
-    shared_ptr<ArmPlanner> planner = shared_ptr<ArmPlanner>(new ArmPlanner());
-
     // Setup lcm
     lcm::LCM lcm;
     if ( !lcm.good( ) )
         return 1;
+
+    // Create planner
+    shared_ptr<ArmPlanner> planner = shared_ptr<ArmPlanner>(new ArmPlanner(&lcm));
+
+    // Subscribe to detections and set up handler
     Handler handler(planner);
     lcm.subscribe(channel::BALL_DETECTIONS, &Handler::handleEKFMessage, &handler);
 
