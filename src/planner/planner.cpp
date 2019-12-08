@@ -24,9 +24,9 @@ using std::pair;
 class Handler
     {
     public:
-        Handler( )
+        Handler(lcm::LCM *lcm )
             {
-            planner = ArmPlanner( );
+                planner = ArmPlanner(lcm);
             }
 
         ~Handler( ) { }
@@ -66,7 +66,7 @@ int main( int argc, char ** argv )
         return 1;
 
     cout << " - Completetd LCM initialization" << endl;
-    Handler handler;
+    Handler handler(&lcm);
     cout << " - Created Handler object" << endl;
     lcm.subscribe( "BALL_DETECTIONS", &Handler::handleEKFMessage, &handler );
     cout << " - Subscribed to ARM_PATH" << endl;

@@ -35,10 +35,10 @@ class ArmPlanner
 
         double bicepJointLength = 0.1;
         double elbowJointLength = 0.1;
-
-	public:
-		ArmPlanner( )
+        ArmPlanner() = default;
+		ArmPlanner(lcm::LCM* lcm_)
 			{
+                lcm = lcm_;
 			}
 
         void addGoals( std::vector< Point< double > > newGoals )
@@ -54,13 +54,14 @@ class ArmPlanner
             double minDist = -1;
             ball_detection_t bestDetection;
 
-            double corrThreshold = 0.2;
+            double corrThreshold = 0.5;
             std::vector< Ball * > corresponded;
             std::cout << "detected: " << newBalls.detections.size() << std::endl;
             for (size_t i = 0; i < newBalls.detections.size(); ++i)
             {
                 ball_detection_t detection = newBalls.detections[i];
                 Eigen::Vector2d detectionPosition( detection.position[0], detection.position[1] );
+                std::cout << "Detection " << detectionPosition.x() << " " << detectionPosition.y() << std::endl;
 
                 Ball * closest;
                 double closestDistance = DBL_MAX;
@@ -77,7 +78,7 @@ class ArmPlanner
                     double distance = (prediction - detectionPosition).norm();
                     if ( distance < corrThreshold && distance < closestDistance )
                         {
-                        std::cout << "Detection " << detectionPosition.x() << " " << detectionPosition.y() << std::endl;
+                        
                         //std::cout << "Prediction " << prediction.x() << " " << prediction.y() << std::endl;
                         std::cout << "Distance " << distance << std::endl;
                         closest = &ball;
@@ -225,10 +226,14 @@ class ArmPlanner
             arm_path_t path;
             path.waypoints_num = 1;
             
-            std::vector<std::vector< double >> waypoints( 1, std::vector<double>(2, 0));
-            path.waypoints[0][0] = endpoint[0];
-            path.waypoints[0][1] = endpoint[1];
-            path.speed = 1;
+            std::vector<std::vector< double > > waypoints( 1, std::vector<double>(2, 0));
+            waypoints[0][0] = endpoint[0];
+            waypoints[0][1] = endpoint[1];
+            path.waypoints = waypoints;
+            path.speed = 1.0;
+            path.angles_num = 1;
+            std::vector<std::vector< double > > angles( 1, std::vector<double>(4, 0));
+            path.angles = angles;
 
             lcm->publish( "ARM_PATH", &path );
 
