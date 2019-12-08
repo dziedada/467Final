@@ -71,6 +71,7 @@ class ArmPlanner
 
             double corrThreshold = 0.5;
             std::vector< Ball * > corresponded;
+            std::vector< Vector2d > predictions;
             std::cout << "detected: " << newBalls.detections.size() << std::endl;
             for (size_t i = 0; i < newBalls.detections.size(); ++i)
             {
@@ -93,10 +94,9 @@ class ArmPlanner
                     double distance = (prediction - detectionPosition).norm();
                     if ( distance < corrThreshold && distance < closestDistance )
                         {
-                        
-                        //std::cout << "Prediction " << prediction.x() << " " << prediction.y() << std::endl;
+                        //std::cout << "Ball " << ball.coordinate.x() << " " << ball.coordinate.y() << std::endl;
                         std::cout << "Distance " << distance << std::endl;
-                        std:: cout << "Velocity: " << ball.getVel() << std::endl;
+                        std::cout << "Velocity: " << ball.getVel() << std::endl;
                         closest = &ball;
                         closestDistance = distance;
                         }
