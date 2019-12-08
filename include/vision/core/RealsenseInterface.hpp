@@ -61,9 +61,9 @@ public:
 
     cv::Mat getDepth() const;
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr getPointCloudBasic() const;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr getPointCloudBasic();
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr getMappedPointCloud() const;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr getMappedPointCloud();
 
     void disableAutoExposure();
 
@@ -91,6 +91,12 @@ private:
 
     const uint16_t* depth_image_;
     const uint16_t* color_image_;
+
+    bool has_new_cloud_ = false;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr ordered_cloud_;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr unordered_cloud_;
+
+    void compute_clouds();
 
     uint64_t utime_;
 
