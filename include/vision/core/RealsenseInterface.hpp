@@ -97,15 +97,12 @@ private:
     rs2::pipeline pipe_;
     rs2::config cfg_;
     rs2::frameset frames_;
-    rs2::frame rgb_frame_;
-    rs2::frame depth_frame_;
     rs2::frame unaligned_rgb_frame_;
     rs2::frame unaligned_depth_frame_;
     rs2::frame pose_frame_;
     rs2_intrinsics depth_intrinsics_;
     rs2_extrinsics depth_to_color_;
     rs2_intrinsics color_intrinsics_;
-    std::unique_ptr<rs2::align> align_object_;
     float scale_;
 
     rs2::sensor sensor_color_;

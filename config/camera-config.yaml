@@ -24,11 +24,11 @@ forward:
   enable_autoexposure: false
   publish_pose: false # tracking camera only
   rotation: [
-    -0.00255961, -0.216971, 0.976175,
-    0.99293, 0.115292, 0.028229,
-    0.11867, -0.969346, -0.215142
+    0.0264653, -0.324288, 0.945588,
+    0.999632, 0.0142811, -0.0230802,
+    0.00601936, -0.945851, -0.324546
   ] # 3x3 rotation matrix left to right first, then top to bottom
-  translation: [0.0511585, -0.0470248, 0.380888] # 3x1 translation vector
+  translation: [-0.335217, -0.00114322, 0.367765] # 3x1 translation vector
 
 downward:
   enabled: false
@@ -92,3 +92,14 @@ ball_detector:
   z_max: 0.11
   ball_radius_min: 0.07
   ball_radius_max: 0.11
+
+fake_ball_detector:
+  plane_mask: true
+  x_min: 0.1
+  x_max: 3
+  y_min: -0.6
+  y_max: 0.6
+  z_min: 0.009
+  z_max: 0.05
+  ball_radius_min: 0.009
+  ball_radius_max: 0.04

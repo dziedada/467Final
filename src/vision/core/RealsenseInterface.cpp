@@ -70,7 +70,6 @@ RealsenseInterface::RealsenseInterface(YAML::Node config)
 
         // Set up the align object
         // rs2_stream align_to = find_stream_to_align(selection.get_streams());
-        align_object_.reset(new rs2::align(RS2_STREAM_COLOR));
     }
 }
 
@@ -118,13 +117,10 @@ bool RealsenseInterface::loadNext()
         // and color information and only publish pos info
         if (!publish_pos_)
         {
-            auto processed = align_object_->process(frames_);
             unaligned_depth_frame_ = frames_.get_depth_frame();
             unaligned_rgb_frame_ = frames_.get_color_frame();
 
             // Try to get the frames from processed
-            rgb_frame_ = processed.first_or_default(RS2_STREAM_COLOR);
-            depth_frame_ = processed.get_depth_frame();
             if (unaligned_rgb_frame_)
             {
                 color_image_ =
