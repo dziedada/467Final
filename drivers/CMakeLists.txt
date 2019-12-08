@@ -87,3 +87,13 @@ if (BUILD_HOUGH_CIRCLE)
         m
     )
 endif()
+
+add_executable(arm-planner planner.cpp)
+
+target_link_libraries(arm-planner LINK_PUBLIC 
+    TrackingVis
+    common
+    ${LCM_LIBRARY} 
+    ${OpenCV_LIBS}
+)
+
