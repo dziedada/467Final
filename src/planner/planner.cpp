@@ -38,7 +38,7 @@ using std::condition_variable;
 using std::function;
 using std::atomic_bool;
 
-const string GUI_FLAG = "-g";
+const char* GUI_FLAG = "-g";
 
 class Handler
 {
@@ -77,8 +77,7 @@ int main(int argc, char ** argv)
 {
     // Set configuration values
     bool view_display = false;
-    string flag1(argv[1]);
-    if (flag1 == GUI_FLAG) view_display = true;
+    if (argc > 1 && !strcmp(argv[1], GUI_FLAG)) view_display = true;
 
     // Create planner
     shared_ptr<ArmPlanner> planner = shared_ptr<ArmPlanner>(new ArmPlanner());
@@ -107,6 +106,7 @@ int main(int argc, char ** argv)
 
     if (view_display)
     {
+        cout << "Running display\n";
         TrackingVis visualizer(planner->cond_var, planner->mtx, planner->getBalls());
         while (running)
         {
