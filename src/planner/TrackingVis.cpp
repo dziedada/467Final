@@ -11,11 +11,11 @@ using std::endl;
 
 // Coordinate system is the vision coordinate system
 // Therefore, image x and y are flipped
-constexpr float SCALE = 200;
-constexpr int DISPLAY_X = 1000;
-constexpr int DISPLAY_Y = 1000;
-constexpr int DISPLAY_Y_ZERO = 500;
-constexpr int DISPLAY_X_ZERO = 500;
+constexpr float SCALE = 100;
+constexpr int DISPLAY_X = 500;
+constexpr int DISPLAY_Y = 500;
+constexpr int DISPLAY_Y_ZERO = 250;
+constexpr int DISPLAY_X_ZERO = 250;
 constexpr int X_AXIS = 1;
 constexpr int Y_AXIS = 0;
 constexpr float PREDICTION_TIME = 0.1; // Units are seconds

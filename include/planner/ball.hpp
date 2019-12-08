@@ -36,7 +36,7 @@ class Ball
         // int64_t inputTime; // EKF system utime
 		Vector2d coordinate;					// ( x, y )
 		Vector2d velocity;					// ( v_x, v_y )
-		Vector2d coordinate_prediction;	// ( x_1, y_2 )
+		Vector2d coordinatePrediction;	// ( x_1, y_2 )
 		cv::KalmanFilter kf;
 		cv::Mat state; // [x, y, v_x, v_y]
 		cv::Mat meas;  // [x, y]
@@ -52,14 +52,14 @@ class Ball
 		{
 			// initialize a kalman filter
 			int stateSize = 4; // [x, y, v_x, v_y]
-			int measSize = 2;  // [x, y]
+			int measSize = 4;  // [x, y]
 			int contrSize = 0; // no control input
 			unsigned int type = CV_64F; // double type
 
 			kf = cv::KalmanFilter(stateSize, measSize, contrSize, type);
 
 			state = Mat(stateSize, 1, type);  // [x,y,v_x,v_y]
-    		meas = Mat(measSize, 1, type);    // [z_x,z_y]
+    		meas = Mat(measSize, 1, type);    // [z_x,z_y,z_vx,z_vy]
 
 			// Transition matrix
 		    // Note: set dT at each processing step!
@@ -75,27 +75,33 @@ class Ball
 		    kf.measurementMatrix = Mat::zeros(measSize, stateSize, type);
 		    kf.measurementMatrix.at<double>(0) = 1.0;
 		    kf.measurementMatrix.at<double>(5) = 1.0;
+		    kf.measurementMatrix.at<double>(10) = 1.0;
+		    kf.measurementMatrix.at<double>(15) = 1.0;
 
 		    // Process noise covariance matrix Q
 		    // TODO: Tune
 
-		    kf.processNoiseCov.at<double>(0) = 1e-5;
-		    kf.processNoiseCov.at<double>(5) = 1e-5;
+		    /*kf.processNoiseCov.at<double>(0) = 1e-2;
+		    kf.processNoiseCov.at<double>(5) = 1e-2;
 		    kf.processNoiseCov.at<double>(10) = 1e-5;
-		    kf.processNoiseCov.at<double>(15) = 1e-5;
-		    // cv::setIdentity(kf.processNoiseCov, cv::Scalar(1e-2));
+		    kf.processNoiseCov.at<double>(15) = 1e-5;*/
+		    cv::setIdentity(kf.processNoiseCov, cv::Scalar(1));
+		    kf.processNoiseCov.at<double>(10) = 1;
+		    kf.processNoiseCov.at<double>(15) = 1;
 
 		    // Measures Noise Covariance Matrix R
-    		cv::setIdentity(kf.measurementNoiseCov, cv::Scalar(1e-3));
-
+    		cv::setIdentity(kf.measurementNoiseCov, cv::Scalar(1));
+		    //kf.processNoiseCov.at<double>(10) = 1;
+		    //kf.processNoiseCov.at<double>(15) = 1;
 
     		// First detection!
             // >>>> Initialization of Prior
             std::cout << "First detection: " << coord << std::endl;
-            kf.errorCovPre.at<double>(0) = 1e-5; // 1 cm
-            kf.errorCovPre.at<double>(5) = 1e-5; // 1 cm
-            kf.errorCovPre.at<double>(10) = 1e-5;
-            kf.errorCovPre.at<double>(15) = 1e-5;
+    		cv::setIdentity(kf.errorCovPre, cv::Scalar(1e-2));
+            /*kf.errorCovPre.at<double>(0) = 1e-2; // 1 cm
+            kf.errorCovPre.at<double>(5) = 1e-2; // 1 cm*/
+            kf.errorCovPre.at<double>(10) = 1e-1;
+            kf.errorCovPre.at<double>(15) = 1e-1;
 
             state.at<double>(0) = coord.x();
             state.at<double>(1) = coord.y();
@@ -109,11 +115,12 @@ class Ball
 		void update(const ball_detection_t &detection)
 		{
             odds += 1;
-            std::cout<< "detection time: " << detection.utime << std::endl;
-            std::cout<< "prev time: " << utime << std::endl;
-
 			double dT = (double)(detection.utime - utime) / (double)1000000;
+            coordinate = Vector2d( detection.position[0], detection.position[1] );
+            velocity = Vector2d( ( detection.position[0] - coordinate[0] ) / dT, ( detection.position[1] - coordinate[1] ) / dT );
+
 			utime = detection.utime;
+            std::cout << "utime " << utime << " dT " << dT << std::endl;
 
 			// update Matrix A for correct velocity estimate 
 			kf.transitionMatrix.at<double>(2) = dT;
@@ -121,23 +128,27 @@ class Ball
 
             // for error checking
             Mat prediction = kf.predict();
-            Vector2d predictPt(prediction.at<double>(0),prediction.at<double>(1));
+            coordinatePrediction = Vector2d(prediction.at<double>(0),prediction.at<double>(1));
 
             // state estimate
-            meas.at<double>(0) = detection.position[0];
-            meas.at<double>(1) = detection.position[1];
+            meas.at<double>(0) = coordinate.x();
+            meas.at<double>(1) = coordinate.y();
+            meas.at<double>(2) = velocity.x();
+            meas.at<double>(3) = velocity.y();
 
             //state = kf.predict();
             state = kf.correct(meas);
             Vector2d estimatePt(state.at<double>(0),state.at<double>(1));
             Vector2d estimateVel(state.at<double>(2),state.at<double>(3));
-            std:: cout << "meas: " << detection.position[0] << " " << detection.position[1] << std::endl;
-            std::cout << "predictPos:  " << predictPt << std::endl;
+            std::cout << "ball: " << coordinate.x() << ", " << coordinate.y() << std::endl;
+            std::cout << "meas: " << detection.position[0] << " " << detection.position[1] << std::endl;
+            std::cout << "predictPos:  " << coordinatePrediction << std::endl;
             std::cout << "updatepos: " << estimatePt << std::endl;
             std::cout << "updateVel: " << estimateVel << std::endl;
             std::cout << "DT: " << dT << std::endl;
-            kf_error_history.push_back( (estimatePt - predictPt).norm() );
-            std::cout << "error: " << (estimatePt - predictPt).norm() << std::endl;
+            kf_error_history.push_back( (estimatePt - coordinatePrediction).norm() );
+            std::cout << "error: " << (estimatePt - coordinatePrediction).norm() << std::endl;
+
 		}
 
 		bool operator==(const Ball &other)
@@ -152,7 +163,7 @@ class Ball
 	        this->utime = other.utime;
 	        this->coordinate = other.coordinate;
 	        this->velocity = other.velocity;
-	        this->coordinate_prediction = other.coordinate_prediction;
+	        this->coordinatePrediction = other.coordinatePrediction;
         }
 
         Vector4d predict_coordinate(int64_t time)
@@ -169,7 +180,7 @@ class Ball
 			kf.transitionMatrix.at<double>(2) = dT;
             kf.transitionMatrix.at<double>(7) = dT;
             auto predState = kf.predict();
-            //cout << "dx " << predState.at<double>(2) << " dy " << predState.at<double>(3) << endl;
+            //std::cout << "dT " << dT << " dx " << predState.at<double>(2) << " dy " << predState.at<double>(3) << endl;
             return Vector4d(predState.at<double>(0), predState.at<double>(1), 
             			    predState.at<double>(2), predState.at<double>(3));
 		}
