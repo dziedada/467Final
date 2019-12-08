@@ -1,2 +1,5 @@
 test1: Ball moves slowly and changes direction halfway through
 test2: Fast moving ball towards arm but slightly to right
+snakes: Fast ball straight on 
+snake 2: Slow ball straight on
+snake 3: slow ball on side
