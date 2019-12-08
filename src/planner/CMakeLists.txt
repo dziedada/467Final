@@ -15,6 +15,15 @@ include_directories(
     ${OPENCV_INCLUDE_DIR}
 )
 
+add_library(TrackingVis SHARED TrackingVis.cpp)
+
+target_link_libraries(TrackingVis ${OpenCV_LIBS})
+
 add_executable(ArmPlanner planner.cpp)
 
-target_link_libraries( ArmPlanner LINK_PUBLIC ${LCM_LIBRARY} ${OpenCV_LIBS})
+target_link_libraries( ArmPlanner LINK_PUBLIC 
+    TrackingVis
+    common
+    ${LCM_LIBRARY} 
+    ${OpenCV_LIBS}
+)

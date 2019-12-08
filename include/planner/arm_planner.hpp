@@ -1,3 +1,5 @@
+#pragma once
+
 // Arm Planner Header
 /*
  * Contains belief of world representation
@@ -5,18 +7,23 @@
  * Receives goal coordinates and dimensions from vision
  * Outputs arm orientations to python arm controller
  */
-#include <math.h>
-#include <utility>
-#include <vector>
-#include <cfloat>
-#include <Eigen/Core>
-#include "ball.hpp"
-#include <lcm/lcm-cpp.hpp>
 #include <common/point.hpp>
 #include <common/message_channels.hpp>
 #include <common/messages/arm_path_t.hpp>
 #include <common/messages/ball_detections_t.hpp>
 #include <common/messages/ball_detection_t.hpp>
+#include <planner/ball.hpp>
+
+#include <lcm/lcm-cpp.hpp>
+#include <Eigen/Core>
+
+#include <cmath>
+#include <cfloat>
+#include <utility>
+#include <vector>
+#include <memory>
+#include <condition_variable>
+#include <mutex>
 
 using Eigen::Vector2d;
 using Eigen::Vector4d;
@@ -24,6 +31,9 @@ using Eigen::Vector4d;
 class ArmPlanner
 	{
 	public:
+        std::shared_ptr<std::condition_variable> cond_var;
+        std::shared_ptr<std::mutex> mtx;
+
 		std::vector< Point < double > > goals;
 		std::vector< Ball > balls;
         
@@ -36,8 +46,11 @@ class ArmPlanner
         double bicepJointLength = 0.1;
         double elbowJointLength = 0.1;
 
+
 	public:
-		ArmPlanner( )
+		ArmPlanner( ) : 
+            cond_var {std::shared_ptr<std::condition_variable>(new std::condition_variable())},
+            mtx {std::shared_ptr<std::mutex>(new std::mutex())}
 			{
 			}
 
@@ -64,6 +77,7 @@ class ArmPlanner
         // TODO: Add multi-ball tracking
         void updateBalls(const ball_detections_t &newBalls )
         {
+            std::lock_guard<std::mutex> lck(*mtx);
             // each detection is either a new ball, existing ball, or False
             double minDist = -1;
             ball_detection_t bestDetection;
@@ -173,6 +187,7 @@ class ArmPlanner
             else {
                 balls[0].update(bestDetection);
             }*/
+            cond_var->notify_all();
         }
 
            
@@ -289,4 +304,9 @@ class ArmPlanner
             path.waypoints[0][0] = pr.second.x;
             path.waypoints[0][1] = pr.second.y;
             }
+
+        const std::vector<Ball>& getBalls()
+        {
+            return balls;
+        }
 	};

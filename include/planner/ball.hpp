@@ -1,3 +1,5 @@
+#pragma once
+
 // Ball Class
 /*
  * Contains the dynamics of the Ball as well as a  
@@ -5,20 +7,24 @@
  */
 
 #include <common/point.hpp>
-#include <cmath>
-#include <opencv2/video/tracking.hpp>
-#include <Eigen/Core>
-#include <vector>
-#include <utility>
 #include <common/messages/ball_detections_t.hpp>
 #include <common/messages/ball_detection_t.hpp>
 
+#include <opencv2/video/tracking.hpp>
+#include <Eigen/Core>
+
+#include <cmath>
 #include <iostream>
-using std::cout;
-using std::endl;
+#include <vector>
+#include <utility>
+
+using cv::Mat;
+
 using Eigen::Vector2d;
 using Eigen::Vector4d;
-using cv::Mat;
+
+using std::cout;
+using std::endl;
 
 class Ball
 	{
@@ -37,6 +43,7 @@ class Ball
 		std::vector<double> kf_error_history;
 
         friend class ArmPlanner;
+		friend class TrackingVis;
 
 	public:
 		Ball( int id_, int col, int64_t time, Vector2d coord, Vector2d vel = Vector2d(0, 0) )
