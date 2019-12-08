@@ -52,6 +52,9 @@ RealsenseInterface::RealsenseInterface(YAML::Node config)
             selection.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>();
         color_intrinsics_ = color_stream.get_intrinsics();
 
+        // Get the extrinsics
+        depth_to_color_ = depth_stream.get_extrinsics_to(color_stream);
+
         // Get sensors
         sensor_color_ = selection.get_device().query_sensors()[0];
         sensor_depth_ = selection.get_device().query_sensors()[1];
@@ -60,13 +63,6 @@ RealsenseInterface::RealsenseInterface(YAML::Node config)
         auto sensor = selection.get_device().first<rs2::depth_sensor>();
         scale_ = sensor.get_depth_scale();
         std::cout << "Camera scale: " << scale_ << std::endl;
-
-        // Get the extrinsics (very hacky)
-        // rs2_error* memory = (rs2_error*)malloc(5000);
-        rs2_error* memory = nullptr;
-        rs2_stream_profile* depth = reinterpret_cast<rs2_stream_profile*>(&depth_stream);
-        rs2_stream_profile* color = reinterpret_cast<rs2_stream_profile*>(&color_stream);
-        rs2_get_extrinsics(depth, color, &depth_to_color_, &memory);
 
         // Set up the align object
         // rs2_stream align_to = find_stream_to_align(selection.get_streams());
@@ -201,7 +197,9 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr RealsenseInterface::getMappedPointCloud() co
             rs2_transform_point_to_point(color_point, &depth_to_color_, depth_point);
             float color_pixel[2]; 
             rs2_project_point_to_pixel(color_pixel, &color_intrinsics_, color_point);
-            cloud->at(color_point[0], color_point[1]) = pcl::PointXYZ(depth_point[0], 
+            if (color_pixel[0] < 0 || color_pixel[0] >= width_ || color_pixel[1] < 0 || 
+                color_pixel[1] >= height_) continue;
+            cloud->at(color_pixel[0], color_pixel[1]) = pcl::PointXYZ(depth_point[0], 
                 depth_point[1], depth_point[2]);
         }
     }
