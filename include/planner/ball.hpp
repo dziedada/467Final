@@ -66,23 +66,29 @@ class Ball
 		    // [ 1 0 0 0]
 		    // [ 0 1 0 0]
 		    kf.measurementMatrix = Mat::zeros(measSize, stateSize, type);
-		    kf.measurementMatrix.at<double>(0) = 1.0f;
-		    kf.measurementMatrix.at<double>(5) = 1.0f;
+		    kf.measurementMatrix.at<double>(0) = 1.0;
+		    kf.measurementMatrix.at<double>(5) = 1.0;
 
 		    // Process noise covariance matrix Q
 		    // TODO: Tune
-		    cv::setIdentity(kf.processNoiseCov, cv::Scalar(1e-2));
+
+		    kf.processNoiseCov.at<double>(0) = 1e-5;
+		    kf.processNoiseCov.at<double>(5) = 1e-5;
+		    kf.processNoiseCov.at<double>(10) = 1e-5;
+		    kf.processNoiseCov.at<double>(15) = 1e-5;
+		    // cv::setIdentity(kf.processNoiseCov, cv::Scalar(1e-2));
 
 		    // Measures Noise Covariance Matrix R
-    		cv::setIdentity(kf.measurementNoiseCov, cv::Scalar(1e-1));
+    		cv::setIdentity(kf.measurementNoiseCov, cv::Scalar(1e-3));
 
 
     		// First detection!
             // >>>> Initialization of Prior
-            kf.errorCovPre.at<double>(0) = 1e-2; // 1 cm
-            kf.errorCovPre.at<double>(5) = 1e-2; // 1 cm
-            kf.errorCovPre.at<double>(10) = 1e-2;
-            kf.errorCovPre.at<double>(15) = 1e-2;
+            std::cout << "First detection: " << coord << std::endl;
+            kf.errorCovPre.at<double>(0) = 1e-5; // 1 cm
+            kf.errorCovPre.at<double>(5) = 1e-5; // 1 cm
+            kf.errorCovPre.at<double>(10) = 1e-5;
+            kf.errorCovPre.at<double>(15) = 1e-5;
 
             state.at<double>(0) = coord.x();
             state.at<double>(1) = coord.y();
@@ -96,6 +102,9 @@ class Ball
 		void update(const ball_detection_t &detection)
 		{
             odds += 1;
+            std::cout<< "detection time: " << detection.utime << std::endl;
+            std::cout<< "prev time: " << utime << std::endl;
+
 			double dT = (double)(detection.utime - utime) / (double)1000000;
 			utime = detection.utime;
 
@@ -111,10 +120,17 @@ class Ball
             meas.at<double>(0) = detection.position[0];
             meas.at<double>(1) = detection.position[1];
 
+            //state = kf.predict();
             state = kf.correct(meas);
             Vector2d estimatePt(state.at<double>(0),state.at<double>(1));
-
+            Vector2d estimateVel(state.at<double>(2),state.at<double>(3));
+            std:: cout << "meas: " << detection.position[0] << " " << detection.position[1] << std::endl;
+            std::cout << "predictPos:  " << predictPt << std::endl;
+            std::cout << "updatepos: " << estimatePt << std::endl;
+            std::cout << "updateVel: " << estimateVel << std::endl;
+            std::cout << "DT: " << dT << std::endl;
             kf_error_history.push_back( (estimatePt - predictPt).norm() );
+            std::cout << "error: " << (estimatePt - predictPt).norm() << std::endl;
 		}
 
 		bool operator==(const Ball &other)
@@ -176,5 +192,10 @@ class Ball
 		Vector2d getPos()
 		{
 			return Vector2d(state.at<double>(0), state.at<double>(1));
+		}
+
+		Vector2d getVel()
+		{
+			return Vector2d(state.at<double>(2), state.at<double>(3));
 		}
 	};
