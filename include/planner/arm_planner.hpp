@@ -96,17 +96,20 @@ class ArmPlanner
                         
                         //std::cout << "Prediction " << prediction.x() << " " << prediction.y() << std::endl;
                         std::cout << "Distance " << distance << std::endl;
+                        std:: cout << "Velocity: " << ball.getVel() << std::endl;
                         closest = &ball;
                         closestDistance = distance;
                         }
                 }
                 if ( closestDistance == DBL_MAX )
                 {
+                    detection.utime = newBalls.utime;
                     balls.push_back( Ball( currentId, detection.color, detection.utime, Eigen::Vector2d( detection.position[0], detection.position[1] ) ) );
                     ++currentId;
                 }
                 else 
                 {
+                    detection.utime = newBalls.utime;
                     closest->update( detection );
                     corresponded.push_back( closest );
                 }
@@ -210,6 +213,7 @@ class ArmPlanner
 
             // Project the ball out between time intervals
             std::pair<double, double> times = closest->projectTimeToReach(armOuterRadius, armInnerRadius);
+            if(times.first == -1) return {Vector2d(0,0)};
 
             // a spot is a place to hit the ball from
             double bestSpotScore = DBL_MAX;
@@ -227,7 +231,7 @@ class ArmPlanner
                     bestSpotScore = spotScore; 
                     }
                 }
-
+            // TODO: Rigtht or left when far 
             Vector2d goal = chooseGoal( *closest );
             return calculateWaypoints( *closest, bestSpot, goal );
         }
@@ -243,8 +247,10 @@ class ArmPlanner
             path.waypoints_num = 1;
             
             std::vector<std::vector< double > > waypoints( 1, std::vector<double>(2, 0));
-            waypoints[0][0] = endpoint[0];
-            waypoints[0][1] = endpoint[1];
+
+            // Flip X and Y for Arm Coordinate system
+            waypoints[0][0] = endpoint[1];
+            waypoints[0][1] = endpoint[0];
             path.waypoints = waypoints;
             path.speed = 1.0;
             path.angles_num = 1;
