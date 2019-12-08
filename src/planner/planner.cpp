@@ -39,14 +39,17 @@ class Handler
 
                 planner.updateBalls( *ball );
 
-                std::vector<Vector2d> plan = planner.calculatePlan( );
+                // don't calculate a plan if there are no detected balls
                 if(planner.balls.empty()) return;
+
+                std::vector<Vector2d> plan = planner.calculatePlan( );
+                cout << "Plan = " << plan[0][0] << " " << plan[0][1] << endl;
 
                 /*auto pos =  planner.balls[0].getPos();
                 cout << pos << endl;
                 cout << " calculated Plan at " << endl;*/
 
-                // planner.publishPlan( plan );
+                planner.publishPlan( plan[0] );
             }
         
     private:

@@ -46,20 +46,6 @@ class ArmPlanner
             goals = newGoals;
             }
 
-        // void updateBall( const ball_detection_t &ball )
-        // {
-
-        //     // add the incoming balls to our vector of balls and mark the time
-        //     bool exists = false;
-        //     for ( auto &existing: balls )
-        //     {
-        //         if ( ball.id == existing.id )
-        //             existing = ball;
-        //     }
-
-        //     if ( !exists )
-        //         balls.push_back( ball );
-        // }
         int currentId = 0;
         // TODO: Add multi-ball tracking
         void updateBalls(const ball_detections_t &newBalls )
@@ -68,20 +54,7 @@ class ArmPlanner
             double minDist = -1;
             ball_detection_t bestDetection;
 
-            // handle if the ball is a new ball
-            /*if(newBalls.detections.empty())
-            {
-                emptyFrames++;
-                return;
-            }
-            else 
-            {
-                // TODO: Make configurable
-                if(emptyFrames > 100) { balls.clear(); }
-                emptyFrames = 0;
-            }*/
-
-            double corrThreshold = 0.1;
+            double corrThreshold = 0.2;
             std::vector< Ball * > corresponded;
             std::cout << "detected: " << newBalls.detections.size() << std::endl;
             for (size_t i = 0; i < newBalls.detections.size(); ++i)
@@ -146,37 +119,6 @@ class ArmPlanner
             }
 
             std::cout << "corresponded: " << balls.size() << std::endl;
-
-
-
-                /*
-                if(balls.empty()) {
-                    // chose detection closest to the arm 
-                    if(minDist == -1 || sqrt(detection.position[0]*detection.position[0] + 
-                        detection.position[1]*detection.position[1]) < minDist)  
-                    {
-                        bestDetection = detection;
-                        minDist = sqrt(detection.position[0]*detection.position[0] + 
-                                    detection.position[1]*detection.position[1]);
-                    }
-                }
-                else {
-                    // chose the detection closest to previous ball
-                    // TODO: Use a
-                    Vector4d prevBallPos = balls[0].predict_coordinate(detection.utime);
-
-                    if(minDist == -1) bestDetection = detection;
-                    sqrt(detection.position[0]*detection.position[0] + 
-                                    detection.position[1]*detection.position[1]);
-
-                }*/
-            /*if(balls.empty()) { 
-                balls.push_back( Ball(0, bestDetection.color, bestDetection.utime,
-                    Eigen::Vector2d(bestDetection.position[0], bestDetection.position[1])) );
-            }
-            else {
-                balls[0].update(bestDetection);
-            }*/
         }
 
            
@@ -249,7 +191,6 @@ class ArmPlanner
                     }
                 }
 
-            // TODO: 
             // Project the ball out between time intervals
             std::pair<double, double> times = closest->projectTimeToReach(armOuterRadius, armInnerRadius);
 
@@ -279,18 +220,19 @@ class ArmPlanner
             {
             }
 
-        void publishPlan( std::pair < Point < double >, Point < double > > &pr )
+        void publishPlan( Vector2d endpoint )
             {
             arm_path_t path;
             path.waypoints_num = 1;
-
-            path.waypoints[0][0] = pr.first.x;
-            path.waypoints[0][1] = pr.first.y;
+            
+            std::vector<std::vector< double >> waypoints( 1, std::vector<double>(2, 0));
+            path.waypoints[0][0] = endpoint[0];
+            path.waypoints[0][1] = endpoint[1];
             path.speed = 1;
 
-            lcm->publish( channel::ARM_PATH, &path );
+            lcm->publish( "ARM_PATH", &path );
 
-            path.waypoints[0][0] = pr.second.x;
-            path.waypoints[0][1] = pr.second.y;
+            // path.waypoints[0][0] = pr.second.x;
+            // path.waypoints[0][1] = pr.second.y;
             }
 	};
