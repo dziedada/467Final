@@ -21,8 +21,8 @@ public:
     int mode_;
 
     void runStateMachine();
-private:
     void update_target(const Prediction& new_target);
+private:
 
     void update_curpose(const Eigen::Vector3d& new_pose);
 
