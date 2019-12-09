@@ -13,6 +13,8 @@
 #include <common/messages/ball_detections_t.hpp>
 #include <common/messages/ball_detection_t.hpp>
 #include <planner/ball.hpp>
+#include <planner/OuterLoopController.hpp>
+#include <planner/Prediction.hpp>
 
 #include <lcm/lcm-cpp.hpp>
 #include <Eigen/Core>
@@ -24,6 +26,7 @@
 #include <memory>
 #include <condition_variable>
 #include <mutex>
+#include <thread>
 
 using Eigen::Vector2d;
 using Eigen::Vector4d;
@@ -33,11 +36,12 @@ class ArmPlanner
 	public:
         std::shared_ptr<std::condition_variable> cond_var;
         std::shared_ptr<std::mutex> mtx;
+        lcm::LCM *lcm;
+        OuterLoopController outer_loop_controller;
 
 		std::vector< Point < double > > goals;
 		std::vector< Ball > balls;
         
-        lcm::LCM *lcm;
 
         double armInnerRadius = 0.100;
         double armOuterRadius = 0.175;
@@ -49,9 +53,10 @@ class ArmPlanner
 	public:
 		ArmPlanner(lcm::LCM* lcm_) : 
             cond_var {std::shared_ptr<std::condition_variable>(new std::condition_variable())},
-            mtx {std::shared_ptr<std::mutex>(new std::mutex())}
+            mtx {std::shared_ptr<std::mutex>(new std::mutex())}, lcm {lcm_},
+            outer_loop_controller {OuterLoopController(lcm_)}
 			{
-                lcm = lcm_;
+                std::thread([this]() {this->outer_loop_controller.runStateMachine();}).detach();
 			}
 
         void addGoals( std::vector< Point< double > > newGoals )

@@ -86,6 +86,7 @@ add_executable(arm-planner planner.cpp)
 
 target_link_libraries(arm-planner LINK_PUBLIC 
     TrackingVis
+    OuterLoopController
     common
     ${LCM_LIBRARY} 
     ${OpenCV_LIBS}

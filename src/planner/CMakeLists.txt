@@ -18,3 +18,9 @@ include_directories(
 add_library(TrackingVis SHARED TrackingVis.cpp)
 
 target_link_libraries(TrackingVis ${OpenCV_LIBS})
+
+add_library(OuterLoopController SHARED OuterLoopController.cpp)
+
+target_link_libraries(OuterLoopController
+    ${LCM_LIBRARIES}
+)
