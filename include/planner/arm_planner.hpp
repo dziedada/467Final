@@ -46,13 +46,6 @@ class ArmPlanner
         double bicepJointLength = 0.1;
         double elbowJointLength = 0.1;
 
-        enum state {idle, prepare, punch};
-        // (x, y, wrist_angle)
-        Vector3d cur_pose(-1, -1, 0);
-        Prediction prev_pred;
-        int mode;
-
-
 	public:
 		ArmPlanner(lcm::LCM* lcm_) : 
             cond_var {std::shared_ptr<std::condition_variable>(new std::condition_variable())},
@@ -60,95 +53,6 @@ class ArmPlanner
 			{
                 lcm = lcm_;
 			}
-
-        void update_curpose(Vector3d new_pose) {
-            cur_pose = new_pose;
-        }
-
-        void runStateMachine() {
-            while (true) {
-                switch(state) {
-                    case idle:
-                        if (balls.size()) {
-                            state = prepare;
-                        }
-                        if (cur_pose.x() != 0.0 || cur_pose.y() != 0.0) {
-                            idle();
-                        }
-                        break;
-                    case prepare:
-                        prepare();
-                        break;
-                    case punch:
-                        punch();
-                        break;
-                }
-                usleep(1000);
-            }
-        }
-
-        void idle() {
-            // go to home pose
-            std::cout << "[Idle State]: go to " << "(0.0, 0.0, 0.0)" << std::endl;
-            publishPlan(Vector3d(0.0, 0.0, 0.0));
-            update_curpose(Vector3d(0.0, 0.0, 0.0)); 
-        }
-
-        bool diff(Vector3d p1, Vector3d p2) {
-            if ((p1.x() - p2.x()) * (p1.x() - p2.x()) + (p1.y() - p2.x()) * (p1.y() - p2.y()) > 0.01)
-                return true;
-            return false;
-        }
-
-        Vector3d calc_prep_pose(Prediction pred) {
-            if (pred.arrival.x() < 0) {
-                mode = 2;
-                return Vector3d(-0.15, 0.08, 0);
-            }
-            mode = 1;
-            return Vector3d(0.15, 0.08, 0)
-        }
-
-        Vector3d calc_punch_pose(Prediction pred) {
-            if (pred.arrival.x() < 0)
-                return Vector3d(0.08, 0.15, 0);
-            return Vector3d(-0.08, 0.15, 0)
-        }
-
-        void prepare() {
-            Prediction pred;
-            pred.time = DBL_MAX;
-            for (auto &ball: balls) {
-                Prediction new_pred = ball.getPred();
-                if (new_pred.time < pred.time) {
-                    pred = new_pred;
-                }
-            }
-
-            if (pred == prev_pred) {
-                return;
-            }
-
-            Vector3d tar_pose = calc_prep_pose(pred);
-            if (diff(tar_pose, cur_pose)) {
-                std::cout << "[Prepare State]: go to (" << tar_pose.x() << ", " << 
-                tar_pose.y() << ", " << tar_pose.z() << ")" << std::endl;
-                publishPlan(tar_pose);
-                update_curpose(tar_pose);
-            }
-            if (pred.time < 0.5) {
-                state = punch;
-            }
-        }
-
-        void punch() {
-            std::cout << "[Punch State]: go to (" << tar_pose.x() << ", " << 
-                tar_pose.y() << ", " << tar_pose.z() << ")" << std::endl;
-            Vector3d tar_pose = calc_punch_pose(pred);
-            publishPlan(tar_pose);
-            update_curpose(tar_pose);
-            state = idle; 
-        }
 
         void addGoals( std::vector< Point< double > > newGoals )
             {
@@ -336,7 +240,7 @@ class ArmPlanner
             {
             }
 
-        void publishPlan( Vector3d arm_pose )
+        void publishPlan( Vector2d endpoint )
             {
             arm_path_t path;
             path.waypoints_num = 1;
@@ -344,16 +248,13 @@ class ArmPlanner
             std::vector<std::vector< double > > waypoints( 1, std::vector<double>(2, 0));
 
             // Flip X and Y for Arm Coordinate system
-            waypoints[0][0] = arm_pose[1];
-            waypoints[0][1] = arm_pose[0];
-            // waypoints[0][2] = arm_pose[2];
-            // TODO: mode
-            waypoints[0][2] = mode;
+            waypoints[0][0] = endpoint[1];
+            waypoints[0][1] = endpoint[0];
             path.waypoints = waypoints;
             path.speed = 1.0;
-            // path.angles_num = 1;
-            // std::vector<std::vector< double > > angles( 1, std::vector<double>(4, 0));
-            // path.angles = angles;
+            path.angles_num = 1;
+            std::vector<std::vector< double > > angles( 1, std::vector<double>(4, 0));
+            path.angles = angles;
 
             lcm->publish( "ARM_PATH", &path );
 
