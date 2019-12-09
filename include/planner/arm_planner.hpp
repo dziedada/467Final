@@ -20,6 +20,7 @@
 #include <Eigen/Core>
 
 #include <cmath>
+#include <climits>
 #include <cfloat>
 #include <utility>
 #include <vector>
@@ -120,6 +121,8 @@ class ArmPlanner
                 }
             }
             
+			Ball * bestBall;
+			int64_t bestTime = ULLONG_MAX;
             for( auto it = balls.begin(); it != balls.end(); )
             {
                 if ( corresponded.end() == std::find( corresponded.cbegin(), corresponded.cend(), &*it ) )
@@ -138,9 +141,15 @@ class ArmPlanner
                 }
                 else
                 {
+					if ( it->reachPrediction.ball_in_range_time_ < bestTime )
+						{
+						bestTime = it->reachPrediction.ball_in_range_time_;
+						bestBall = &*it;
+						}
                     ++it;
                 }
             }
+			outer_loop_controller.update_target( bestBall->reachPrediction );
 
             std::cout << "corresponded: " << balls.size() << std::endl;
             cond_var->notify_all();

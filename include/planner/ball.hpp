@@ -13,12 +13,15 @@
 #include <opencv2/video/tracking.hpp>
 #include <Eigen/Core>
 
+#include <planner/Prediction.hpp>
+
 #include <cmath>
 #include <iostream>
 #include <vector>
 #include <utility>
 #include <list>
 #include <deque>
+#include <chrono>
 
 using cv::Mat;
 
@@ -45,6 +48,7 @@ class Ball
 		std::vector<double> kf_error_history;
 		std::list< Vector2d > velocityHistory;//( 5, Vector2d( 0.0, 0.0 ), std::deque<Vector2d>);
 		const int HISTORY_SIZE = 10;
+		Prediction reachPrediction;
         friend class ArmPlanner;
 		friend class TrackingVis;
 
@@ -117,14 +121,18 @@ class Ball
 				{
 				velocityHistory.push_back( Vector2d( 0.0, 0.0 ) );
 				}
+
+			reachPrediction.ball_in_range_time_ = 1000;
+			reachPrediction.ball_inrange_position_ = Vector2d( 0.0, 0.0 );
+			reachPrediction.ball_inrange_velocity_ = Vector2d( 0.0, 0.0 );
+			reachPrediction.goal_ = Vector2d( 0.0, 0.0 );
+			reachPrediction.utime_ = 0;
 		}
 
 		void update(const ball_detection_t &detection)
 		{
             odds += 1;
 			double dT = (double)(detection.utime - utime) / (double)1000000;
-
-
 
             velocity = Vector2d( ( detection.position[0] - coordinate[0] ) / dT, ( detection.position[1] - coordinate[1] ) / dT );
             coordinate = Vector2d( detection.position[0], detection.position[1] );
@@ -161,8 +169,26 @@ class Ball
             std::cout << "DT: " << dT << std::endl;*/
             kf_error_history.push_back( (estimatePt - coordinatePrediction).norm() );
             //std::cout << "error: " << (estimatePt - coordinatePrediction).norm() << std::endl;
-
 		}
+		
+		void updatePrediction( const double outerRadius )
+			{
+			for ( double interval = 0.05; interval < 10; interval += 0.05 )
+				{
+				Vector4d prediction = predict_coordinate( interval );
+				Vector2d position = Vector2d( prediction.x(), prediction.y() );
+				if ( position.norm() < outerRadius )
+					{
+					Vector2d velocity = Vector2d( prediction[2], prediction[3] );
+					reachPrediction.utime_ = std::chrono::duration_cast<std::chrono::microseconds>(
+							std::chrono::system_clock::now().time_since_epoch()).count();
+					reachPrediction.ball_in_range_time_ = reachPrediction.utime_ + 10e6*interval;
+					reachPrediction.ball_inrange_position_ = position;
+					reachPrediction.ball_inrange_velocity_ = velocity;
+					reachPrediction.goal_ = position;
+					}
+				}
+			}
 
 		bool operator==(const Ball &other)
 		{
