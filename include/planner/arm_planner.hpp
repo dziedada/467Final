@@ -151,8 +151,11 @@ class ArmPlanner
                 }
             }
 			outer_loop_controller.update_target( bestBall->reachPrediction );
-			std::cout << "position: " << bestBall->reachPrediction.ball_inrange_position_ << std::endl;
-			publishPlan( bestBall->reachPrediction.ball_inrange_position_ );
+			if ( bestBall )
+				{
+				std::cout << "position: " << bestBall->reachPrediction.ball_inrange_position_ << std::endl;
+				publishPlan( bestBall->reachPrediction.ball_inrange_position_ );
+				}
 
             std::cout << "corresponded: " << balls.size() << std::endl;
             cond_var->notify_all();
