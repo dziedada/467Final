@@ -2,6 +2,8 @@
 #include <planner/TrackingVis.hpp>
 
 #include <opencv2/highgui.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include <iostream>
 
@@ -38,8 +40,11 @@ TrackingVis::TrackingVis(const std::shared_ptr<std::condition_variable>& cond_va
 void TrackingVis::update()
 {
     cv::Mat display(DISPLAY_X, DISPLAY_Y, CV_8UC3, cv::Scalar(0, 0, 0));
-    cv::line(display, cv::Point(250, 250), cv::Point(500, 500), white, LINE_THICKNESS);
-    cv::line(display, cv::Point(0, 250), cv::Point(500, 250), white, LINE_THICKNESS);
+    // Draw Grid Lines
+    cv::line(display, cv::Point(DISPLAY_X_ZERO, 0), cv::Point(DISPLAY_X_ZERO, DISPLAY_Y), 
+        white, LINE_THICKNESS);
+    cv::line(display, cv::Point(0, DISPLAY_Y_ZERO), cv::Point(DISPLAY_X, DISPLAY_Y_ZERO), 
+        white, LINE_THICKNESS);
     for (const Ball& ball : balls_)
     {
         // Compute ball location

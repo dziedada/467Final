@@ -10,7 +10,6 @@
 #include <common/messages/ball_detections_t.hpp>
 #include <common/messages/ball_detection_t.hpp>
 
-#include <opencv2/video/tracking.hpp>
 #include <Eigen/Core>
 
 #include <planner/Prediction.hpp>
@@ -23,8 +22,6 @@
 #include <deque>
 #include <chrono>
 #include <queue>
-
-using cv::Mat;
 
 using Eigen::Vector2d;
 using Eigen::Vector4d;
