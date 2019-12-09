@@ -8,6 +8,11 @@ void OuterLoopController::update_curpose(const Vector3d& new_pose) {
     cur_pose = new_pose;
 }
 
+void update_target(const Prediction& new_target)
+{
+
+}
+
 void OuterLoopController::runStateMachine() {
     while (true) {
         switch(state) {
