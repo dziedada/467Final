@@ -109,9 +109,6 @@ int main(int argc, char ** argv)
 
     // Start lcm thread
     std::thread(handle_loop, &lcm).detach();
-    std::thread statemachineThread([&handler]() {
-        handler.planner.runStateMachine();
-    });
 
     if (view_display)
     {
