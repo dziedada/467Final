@@ -1,31 +1,42 @@
 #pragma once
 
+#include <planner/Prediction.hpp>
+
+#include <lcm/lcm-cpp.hpp>
 #include <Eigen/Core>
+
+enum state {idle, prepare, punch};
 
 class OuterLoopController
 {
 public:
-    enum state {idle, prepare, punch};
+    OuterLoopController(lcm::LCM* lcm_ptr_in);
+
     // (x, y, wrist_angle)
-    Eigen::Vector3d cur_pose(-1, -1, 0);
-    Prediction prev_pred;
-    int mode;
+    state curr_state_;
+    Eigen::Vector3d cur_pose_;
+    lcm::LCM* lcm_ptr_;
+    Prediction pred_;
+    int64_t prev_pred_time_;
+    int mode_;
+
+    void runStateMachine();
 private:
     void update_target(const Prediction& new_target);
 
     void update_curpose(const Eigen::Vector3d& new_pose);
 
-    void runStateMachine();
+    void run_idle();
 
-    void idle();
-
-    bool diff(const Eigen::Vector3d& p1, const Eigen::Vector3d& p2);
+    // bool diff(const Eigen::Vector3d& p1, const Eigen::Vector3d& p2);
 
     Eigen::Vector3d calc_prep_pose(const Prediction& pred);
 
     Eigen::Vector3d calc_punch_pose(const Prediction& pred);
 
-    void prepare();
+    void run_prepare();
 
-    void punch();
+    void run_punch();
+
+    void publishPlan(const Eigen::Vector3d& arm_pose);
 };
