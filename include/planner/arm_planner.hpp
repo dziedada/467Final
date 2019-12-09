@@ -117,6 +117,7 @@ class ArmPlanner
                 {
                     detection.utime = newBalls.utime;
                     closest->update( detection );
+					closest->updatePrediction( 0.18 );
                     corresponded.push_back( closest );
                 }
             }
@@ -270,11 +271,12 @@ class ArmPlanner
             arm_path_t path;
             path.waypoints_num = 1;
             
-            std::vector<std::vector< double > > waypoints( 1, std::vector<double>(2, 0));
+            std::vector<std::vector< double > > waypoints( 1, std::vector<double>(3, 0));
 
             // Flip X and Y for Arm Coordinate system
             waypoints[0][0] = endpoint[1];
             waypoints[0][1] = endpoint[0];
+			waypoints[0][2] = 1;
             path.waypoints = waypoints;
             path.speed = 1.0;
             path.angles_num = 1;
