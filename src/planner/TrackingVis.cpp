@@ -46,8 +46,8 @@ void TrackingVis::update()
         int x = ball.coordinate[X_AXIS] * SCALE + DISPLAY_X_ZERO;
         int y = ball.coordinate[Y_AXIS] * SCALE + DISPLAY_Y_ZERO;
         // Compute detection / measurement location
-        int detection_x = ball.meas.at<double>(X_AXIS) * SCALE + DISPLAY_X_ZERO;
-        int detection_y = ball.meas.at<double>(Y_AXIS) * SCALE + DISPLAY_Y_ZERO;
+        int detection_x = ball.meas[X_AXIS] * SCALE + DISPLAY_X_ZERO;
+        int detection_y = ball.meas[Y_AXIS] * SCALE + DISPLAY_Y_ZERO;
         // Select pixel color based on ball color
         cv::Scalar pixels;
         if (ball.color == color::Green) pixels = green;

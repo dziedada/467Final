@@ -40,7 +40,7 @@ class Ball
 		int64_t utime; // previous utime
         int odds; // odds we think this ball is fake news
         // int64_t inputTime; // EKF system utime
-        cv::Mat meas;  // [x, y]
+        Vector2d meas;
 		Vector2d coordinate;					// ( x, y )
 		Vector2d prevDetectionPos;
 		Vector2d velocity;					// ( v_x, v_y )
@@ -50,22 +50,19 @@ class Ball
 
 		std::deque< Vector2d > coordHistory;
 		std::deque<double> speedHistory;
-		std::list< Vector2d > velocityHistory;
-		const int HISTORY_SIZE = 10;
+		std::deque< Vector2d > velocityHistory;
+		int HISTORY_SIZE = 10;
 		Prediction reachPrediction;
         friend class ArmPlanner;
 		friend class TrackingVis;
 
 	public:
+
 		Ball( int id_, int col, int64_t time, Vector2d coord, Vector2d vel = Vector2d(0, 0) )
 				: id( id_ ), color( col ), utime( time ), odds( 0 ),
                 coordinate( coord ), velocity( vel )
 		{
-			int measSize = 2;  // [x, y]
-			meas = Mat(measSize, 1, CV_64F);
-
-			meas.at<double>(0) = coordinate.x();
-            meas.at<double>(1) = coordinate.y();
+			meas = coord;
 
 			// Initialize coord history   
 			for ( int i = 0; i < HISTORY_SIZE; ++i )
@@ -81,13 +78,13 @@ class Ball
 			for ( int i = 0; i < HISTORY_SIZE; ++i )
 			{
 				velocityHistory.push_back( Vector2d( 0.0, 0.0 ) );
+			}
 
 			reachPrediction.ball_in_range_time_ = 1000;
 			reachPrediction.ball_inrange_position_ = Vector2d( 0.0, 0.0 );
 			reachPrediction.ball_inrange_velocity_ = Vector2d( 0.0, 0.0 );
 			reachPrediction.goal_ = Vector2d( 0.0, 0.0 );
 			reachPrediction.utime_ = 0;
-			}
 		}
 
 		std::vector<double> GetLinearFit(const std::deque<Vector2d>& data)
@@ -123,8 +120,7 @@ class Ball
 			double dT = (double)(detection.utime - utime) / (double)1000000;
 
 			// update measurement for gui
-			meas.at<double>(0) = coordinate.x();
-            meas.at<double>(1) = coordinate.y();
+			meas = coordinate;
 
             velocity = Vector2d( ( detection.position[0] - prevDetectionPos[0] ) / dT, ( detection.position[1] - prevDetectionPos[1] ) / dT );
             Vector2d detectionPos = Vector2d( detection.position[0], detection.position[1] );
@@ -171,16 +167,6 @@ class Ball
 		}
 
 		// Check out realsense utime now
-
-        Ball operator=( const Ball &other )
-        {
-	        this->id = other.id;
-	        this->color = other.color;
-	        this->utime = other.utime;
-	        this->coordinate = other.coordinate;
-	        this->velocity = other.velocity;
-	        this->coordinatePrediction = other.coordinatePrediction;
-        }
 
         Vector4d predict_coordinate(int64_t time)
         {

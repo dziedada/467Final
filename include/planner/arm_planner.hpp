@@ -120,37 +120,47 @@ class ArmPlanner
                     corresponded.push_back( closest );
                 }
             }
-            
-			Ball * bestBall;
+            cout << "enter purge code " << endl;
+            Ball * bestBall;// = nullptr;
 			int64_t bestTime = ULLONG_MAX;
             for( auto it = balls.begin(); it != balls.end(); )
             {
+                if(it == balls.end()) break;
+                std::cout << "checking new ball" << std::endl;
                 if ( corresponded.end() == std::find( corresponded.cbegin(), corresponded.cend(), &*it ) )
                 {
-					//std::cout << "not corresponded";
-                    if ( (*it).odds < -10 )
+					std::cout << "ball not in corresponded" << std::endl;
+                    //std::cout << "not corresponded";
+                    std::cout << it->odds << std::endl;
+                    if ( it->odds < -10 )
                         {
                         // purge ball
-                        std::cout << "Purged ball... " << balls.size() << " left";
+                        std::cout << "Purged ball... "<< std::endl;// << balls.size() << " left";
                         it = balls.erase( it );
+                        std::cout << "Purged ball.2.. "<< std::endl;
                         }
                     else
                         {
-                        (*it).odds -= 1;
+                        std::cout << "decreasing odds" << std::endl;
+                        it->odds -= 1;
                         ++it;
                         }
                 }
                 else
                 {
-					if ( it->reachPrediction.ball_in_range_time_ < bestTime )
+					std::cout << "ball in corresponded" << std::endl;
+                    if ( it->reachPrediction.ball_in_range_time_ < bestTime )
 						{
-						bestTime = it->reachPrediction.ball_in_range_time_;
+						std::cout << "reachPrediction" << std::endl;
+                        bestTime = it->reachPrediction.ball_in_range_time_;
 						bestBall = &*it;
+                        std::cout << "set best" << std::endl;
 						}
                     ++it;
                 }
             }
-			outer_loop_controller.update_target( bestBall->reachPrediction );
+            std::cout << balls.size() << " balls left." << std::endl;
+			//outer_loop_controller.update_target( bestBall->reachPrediction );
 			if ( bestBall )
 				{
 				// std::cout << "position: " << bestBall->reachPrediction.ball_inrange_position_ 
