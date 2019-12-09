@@ -22,6 +22,7 @@ class StateMachine():
         self.next_state = "idle"
         self.test = 0
         self.togo = []
+        self.wrist_angles = []
         self.togo_angles = []
         self.speed_norm = 1.0
         self.togo_lock = threading.Lock()
@@ -47,6 +48,7 @@ class StateMachine():
         self.speed_norm = copy.deepcopy(msg.speed)
         self.togo = copy.deepcopy(msg.waypoints)
         self.togo_angles = copy.deepcopy(msg.angles)
+        self.wrist_angles = copy.deepcopy(msg.wrist_angles)
         if len(self.togo) >= 1:
             self.next_state = "move_positions"
         elif len(self.togo_angles):
@@ -136,10 +138,14 @@ class StateMachine():
         self.status_message = "State: Move - move to a target point"
         self.current_state = "move_positions"
         self.togo_lock.acquire()
+        id = 0
         while len(self.togo):
             target = self.togo.pop(0)
+            wrist_angle = self.wrist_angles[id]
+            id += 1
             angles = IK((target[0], target[1], 0), target[2])
             if angles:
+                angles[len(angles) - 1] = wrist_angle
                 self.rexarm.move_to_target_angles(angles, self.speed_norm, False)
         self.next_state = "idle"
         self.togo_lock.release()

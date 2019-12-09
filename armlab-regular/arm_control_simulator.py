@@ -29,15 +29,17 @@ def use_arm_path_t():
 	msg.speed = 1
 	msg.waypoints_num = 1
 	#msg.waypoints = [[0.1, inter[0]]]
-	msg.waypoints = [[0.1, 0.05, 2]]
+	msg.waypoints = [[0.18, 0.08, 1]]
+	msg.wrist_angles = [0]
 	lc = lcm.LCM()
 	lc.publish("ARM_PATH", msg.encode())
-	time.sleep(4)
+	time.sleep(2)
 	msg.waypoints_num = num - 1
 	msg.waypoints = []
 	for i in range(1, num):
 		msg.waypoints.append([0.1, inter[i]])
-	msg.waypoints = [[-0.1, 0.05, 2]]
+	msg.waypoints = [[-0.08, 0.15, 1]]
+	msg.wrist_angles = [0]
 	lc.publish("ARM_PATH", msg.encode())
 
 def test():
@@ -48,6 +50,7 @@ def test():
 	#msg.waypoints = [[0.1, 0.08]]
 	#msg.waypoints = [[0.19, 0.01]]
 	msg.waypoints = [[-0.1, 0.1, 1]]
+	msg.wrist_angles = [np.pi / 3]
 	lc = lcm.LCM()
 	lc.publish("ARM_PATH", msg.encode())
 
