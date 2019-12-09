@@ -58,6 +58,7 @@ class Ball
 
 		std::vector<double> coordLine; // [m, b]
 
+		std::deque<Vector2d> detectionHistory;
 		std::deque< Vector2d > coordHistory;
 		std::deque<double> speedHistory;
 		std::deque< Vector2d > velocityHistory;
@@ -79,6 +80,10 @@ class Ball
 			for ( int i = 0; i < HISTORY_SIZE; ++i )
 			{
 				coordHistory.push_back(coord);
+			}
+
+			for (int i = 0; i < HISTORY_SIZE; ++i) {
+				detectionHistory.push_back(coord);
 			}
 
 			for ( int i = 0; i < HISTORY_SIZE; ++i )
@@ -135,9 +140,18 @@ class Ball
 		}
 
 		void calcAvgVelocity() {
-			velocity_coord_avg = (velocity_coord_avg * HISTORY_SIZE - velocityCoordHistory[0] 
-				+ velocity_coord) / (double)HISTORY_SIZE;
+			// velocity_coord_avg = (velocity_coord_avg * HISTORY_SIZE - velocityCoordHistory[0] 
+			//	+ velocity_coord) / (double)HISTORY_SIZE;
 			// TODO: use avg vel do prediction
+			velocity_coord_avg = Vector2d(0, 0);
+			for ( auto &it: velocityCoordHistory )
+				{
+				velocity_coord_avg.x() += it.x();
+				velocity_coord_avg.y() += it.y();
+				}
+			velocity_coord_avg /= (double)HISTORY_SIZE;
+
+
 		}
 
 		void update(const ball_detection_t &detection)
@@ -145,12 +159,14 @@ class Ball
             odds += 1;
 			double dT = (double)(detection.utime - utime) / (double)1000000;
 
-			// update measurement for gui
-			meas = coordinate;
-
             velocity = Vector2d( ( detection.position[0] - prevDetectionPos[0] ) / dT, ( detection.position[1] - prevDetectionPos[1] ) / dT );
             Vector2d detectionPos = Vector2d( detection.position[0], detection.position[1] );
+
+			meas = detectionPos;
+
             prevDetectionPos = detectionPos;
+			detectionHistory.pop_front();
+			detectionHistory.push_back(detectionPos);
 
             velocityHistory.pop_front();
 			velocityHistory.push_back( velocity );
@@ -159,13 +175,13 @@ class Ball
 			// speedHistory.pop_front();
 			// speedHistory.push_back((coordHistory.back() - coordHistory.back()-1).norm()/dT);
 			// use a line of best fit to get the coordinate prediction
-			coordLine = GetLinearFit(coordHistory);
+			coordLine = GetLinearFit(detectionHistory);
 			coordinate = projectPt(detectionPos, coordLine[0], coordLine[1]);
 			
 			velocity_coord = Vector2d( ( coordinate[0] - coordHistory[HISTORY_SIZE - 1][0] ) / dT, ( coordinate[1] - coordHistory[HISTORY_SIZE - 1][1] ) / dT );
-			calcAvgVelocity();
 			velocityCoordHistory.pop_front();
 			velocityCoordHistory.push_back( velocity_coord );
+			calcAvgVelocity();
 
 			coordHistory.pop_front();
 			// fix: push coord instead of detection
@@ -193,6 +209,7 @@ class Ball
 					reachPrediction.ball_inrange_position_ = position;
 					reachPrediction.ball_inrange_velocity_ = velocity;
 					reachPrediction.goal_ = position;
+					return;
 					}
 				}
 			}
