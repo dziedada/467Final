@@ -11,10 +11,6 @@ using std::cout;
 using std::endl;
 using std::string;
 
-const int STREAM_WIDTH = 640;
-const int STREAM_HEIGHT = 480;
-const int STREAM_FPS = 60;
-
 using namespace vision;
 
 RealsenseInterface::RealsenseInterface(YAML::Node config)
