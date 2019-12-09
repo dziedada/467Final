@@ -34,8 +34,8 @@ class ArmPlanner
         std::shared_ptr<std::condition_variable> cond_var;
         std::shared_ptr<std::mutex> mtx;
 
-		std::vector< Point < double > > goals;
-		std::vector< Ball > balls;
+	std::vector< Point < double > > goals;
+	std::vector< Ball > balls;
         
         lcm::LCM *lcm;
 
@@ -48,11 +48,11 @@ class ArmPlanner
 
 
 	public:
-		ArmPlanner(lcm::LCM* lcm_) : 
+	ArmPlanner(lcm::LCM* lcm_) : 
             cond_var {std::shared_ptr<std::condition_variable>(new std::condition_variable())},
             mtx {std::shared_ptr<std::mutex>(new std::mutex())}
 			{
-                lcm = lcm_;
+			lcm = lcm_;
 			}
 
         void addGoals( std::vector< Point< double > > newGoals )
@@ -93,10 +93,9 @@ class ArmPlanner
                     double distance = (prediction - detectionPosition).norm();
                     if ( distance < corrThreshold && distance < closestDistance )
                         {
-                        
-                        //std::cout << "Prediction " << prediction.x() << " " << prediction.y() << std::endl;
-                        std::cout << "Distance " << distance << std::endl;
-                        std:: cout << "Velocity: " << ball.getVel() << std::endl;
+						std::cout << "b= " << ball.coordinate << std::endl;
+						std::cout << "p= " << predictionState << std::endl;
+
                         closest = &ball;
                         closestDistance = distance;
                         }
