@@ -121,7 +121,7 @@ class ArmPlanner
                 }
             }
             cout << "enter purge code " << endl;
-            Ball * bestBall;// = nullptr;
+            Ball * bestBall = nullptr;
 			int64_t bestTime = ULLONG_MAX;
             for( auto it = balls.begin(); it != balls.end(); )
             {
@@ -163,8 +163,7 @@ class ArmPlanner
 			//outer_loop_controller.update_target( bestBall->reachPrediction );
 			if ( bestBall )
 				{
-				std::cout << "position: " << bestBall->reachPrediction.ball_inrange_position_ 
-                     << std::endl;
+				std::cout << "position: " << bestBall->reachPrediction.ball_inrange_position_ << std::endl;
 				publishPlan( bestBall->reachPrediction.ball_inrange_position_ );
 				}
 
