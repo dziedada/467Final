@@ -27,7 +27,8 @@
 #include <memory>
 #include <condition_variable>
 #include <mutex>
-#include <thread>
+#include <thread>>
+#include <cassert>
 
 using Eigen::Vector2d;
 using Eigen::Vector4d;
@@ -220,6 +221,7 @@ class ArmPlanner
             return {spotPos};
         }   
 
+        // THIS HAS BEEN REMOVED AND MOVED TO OUTER CONTROL
         std::vector<Vector2d> calculatePlan( )
         {
             if(balls.empty()) return std::vector<Vector2d>();
@@ -238,7 +240,7 @@ class ArmPlanner
 
             // Project the ball out between time intervals
             std::pair<double, double> times = closest->projectTimeToReach(armOuterRadius, armInnerRadius);
-            if(times.first == -1) return {Vector2d(0,0)};
+            if(times.first == -1 || times.second == times.first ) return {Vector2d(0,0)};
 
             // a spot is a place to hit the ball from
             double bestSpotScore = DBL_MAX;
@@ -246,7 +248,9 @@ class ArmPlanner
             
             // pick best place to hit ball between
             float stepSize = (times.second - times.first) / 10.0;
-            for ( float interval = times.first;  interval <= times.second; interval += stepSize )
+            assert(stepSize != 0);
+            assert(stepSize > 0);
+            for ( float interval = times.first;  interval < times.second; interval += stepSize )
                 {
                 Vector4d spot = closest->predict_coordinate((double)interval);
                 double spotScore = ballSpotHeuristic( spot );

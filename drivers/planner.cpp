@@ -55,7 +55,9 @@ public:
         planner->updateBalls( *ball );
 
         if(planner->balls.empty()) return;
-        std::vector<Vector2d> plan = planner->calculatePlan( );
+
+        // REMOVED CALCULATE PLAN
+        //std::vector<Vector2d> plan = planner->calculatePlan( );
         /*
         auto pos =  planner->balls[0].getPos();
         cout << pos << '\n';
