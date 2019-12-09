@@ -123,6 +123,9 @@ class Ball
 		{
             odds += 1;
 			double dT = (double)(detection.utime - utime) / (double)1000000;
+
+
+
             velocity = Vector2d( ( detection.position[0] - coordinate[0] ) / dT, ( detection.position[1] - coordinate[1] ) / dT );
             coordinate = Vector2d( detection.position[0], detection.position[1] );
 			
@@ -138,7 +141,7 @@ class Ball
 
             // for error checking
             Mat prediction = kf.predict();
-            //coordinatePrediction = Vector2d(prediction.at<double>(0),prediction.at<double>(1));
+            coordinatePrediction = Vector2d(prediction.at<double>(0),prediction.at<double>(1));
 
             // state estimate
             meas.at<double>(0) = coordinate.x();
@@ -178,7 +181,9 @@ class Ball
 
         Vector4d predict_coordinate(int64_t time)
         {
+        	
         	double dT = (double)(time - utime) / (double)1000000;
+        	//cout << "PREDICT COORD DT: " << dT << "\n"; 
         	return predict_coordinate(dT);
         }
 
@@ -198,14 +203,18 @@ class Ball
 				{
 				velocityEstimate.x() += it.x();
 				velocityEstimate.y() += it.y();
-				//std::cout << velocityEstimate << std::endl;
+				//std::cout << "vel est: " << velocityEstimate << std::endl;
 				}
-			velocityEstimate / 5.0;
-
+			velocityEstimate /= 5.0;
+			//std::cout << "vel est final: " << velocityEstimate << std::endl;
 			Vector2d pointEstimate = coordinate + (velocityEstimate * dT);
-            //std::cout << "dT " << dT << " dx " << velocityEstimate.x() << " dy " << velocityEstimate.y() << endl;
+			// std::cout << "prediction: ";
+   //          std::cout << "dT " << dT << " dx " << velocityEstimate.x() << " dy " << velocityEstimate.y() << endl;
             //return Vector4d(predState.at<double>(0), predState.at<double>(1), 
-            			    //predState.at<double>(2), predState.at<double>(3));
+            			    //predState.at<double>(2), predState.at<double>(3)); 
+
+			// TODO: IS this correct?
+
 			return Vector4d( pointEstimate.x(), pointEstimate.y(),
 							velocityEstimate.x(), velocityEstimate.y());
 		}

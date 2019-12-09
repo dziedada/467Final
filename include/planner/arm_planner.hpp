@@ -92,8 +92,10 @@ class ArmPlanner
                         continue;
                     }
 
-                    Eigen::Vector4d predictionState = ball.predict_coordinate( detection.utime );
+                    Eigen::Vector4d predictionState = ball.predict_coordinate( newBalls.utime );
                     Eigen::Vector2d prediction( predictionState.x(), predictionState.y() );
+                    // std::cout << "b= " << ball.coordinate << std::endl;
+                    // std::cout << "p= " << predictionState << std::endl;
                     double distance = (prediction - detectionPosition).norm();
                     if ( distance < corrThreshold && distance < closestDistance )
                         {
@@ -160,12 +162,6 @@ class ArmPlanner
             {
             return sqrt( pt.x * pt.x + pt.y * pt.y );
             }
-
-        // project the ball out time seconds
-        Vector4d projectBall( Ball &ball, double time )
-        {
-            ball.predict_coordinate(time);
-        }
 
         // check to see if the ball will reach radius of us within
         // 2 seconds
