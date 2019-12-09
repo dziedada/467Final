@@ -6,10 +6,15 @@
 #include <opencv2/imgproc.hpp>
 
 #include <iostream>
+#include <chrono>
 
 using std::cout;
 using std::cerr;
 using std::endl;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+using std::chrono::microseconds;
+using std::chrono::seconds;
 
 // Coordinate system is the vision coordinate system
 // Therefore, image x and y are flipped
@@ -23,13 +28,16 @@ constexpr int Y_AXIS = 0;
 constexpr float PREDICTION_TIME = 0.1; // Units are seconds
 constexpr int LINE_THICKNESS = 1;
 constexpr int CIRCLE_RADIUS = 3;
+constexpr int64_t MAX_PRED_TIME_DIFF = 400; // Units are milliseconds
 
 const cv::Scalar green(0, 230, 0);
 const cv::Scalar orange(20, 100, 200);
 const cv::Scalar blue(230, 0, 0);
 const cv::Scalar white(230, 230, 230);
 const cv::Scalar detection_color = white;
-// const cv::Scalar best_prediction_color();
+const cv::Scalar prediction_color(230, 30, 230);
+
+bool shouldPlotPrediction(const Prediction& pred);
 
 TrackingVis::TrackingVis(const std::shared_ptr<std::condition_variable>& cond_var,
     const std::shared_ptr<std::mutex>& mtx, const std::vector<Ball>& balls) :
@@ -54,6 +62,11 @@ void TrackingVis::update()
         // Compute detection / measurement location
         int detection_x = ball.meas[X_AXIS] * SCALE + DISPLAY_X_ZERO;
         int detection_y = ball.meas[Y_AXIS] * SCALE + DISPLAY_Y_ZERO;
+        // Compute prediction location
+        int prediction_x = ball.reachPrediction.ball_inrange_position_[X_AXIS] * SCALE + 
+            DISPLAY_X_ZERO;
+        int prediction_y = ball.reachPrediction.ball_inrange_position_[Y_AXIS] * SCALE +
+            DISPLAY_Y_ZERO;
         // Select pixel color based on ball color
         cv::Scalar pixels;
         if (ball.color == color::Green) pixels = green;
@@ -69,6 +82,14 @@ void TrackingVis::update()
         // Draw line connecting detection to filtered position
         // cv::line(display, cv::Point(x, y), cv::Point(detection_x, detection_y), detection_color, 
         //    LINE_THICKNESS);
+        // Draw Circle for prediction and line connecting to position
+        if (shouldPlotPrediction(ball.reachPrediction))
+        {
+            cv::circle(display, cv::Point(prediction_x, prediction_y), CIRCLE_RADIUS, 
+                prediction_color);
+            cv::line(display, cv::Point(prediction_x, prediction_y), cv::Point(x, y), 
+                prediction_color, LINE_THICKNESS);
+        }
         // Draw Circle for position
         cv::circle(display, cv::Point(x, y), CIRCLE_RADIUS, pixels, cv::FILLED);
         // Compute Line to position in configured number of seconds
@@ -81,4 +102,11 @@ void TrackingVis::update()
     cv::waitKey(1);
 }
 
+bool shouldPlotPrediction(const Prediction& pred)
+{
+    milliseconds curr_time = 
+        duration_cast<milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+    milliseconds pred_time = duration_cast<milliseconds>(microseconds(pred.ball_in_range_time_));
+    return ((pred_time - curr_time).count() <= MAX_PRED_TIME_DIFF);
+}
 

@@ -22,12 +22,22 @@
 #include <deque>
 #include <chrono>
 #include <queue>
+#include <limits>
 
 using Eigen::Vector2d;
 using Eigen::Vector4d;
 
 using std::cout;
 using std::endl;
+using std::numeric_limits;
+using std::chrono::duration_cast;
+using std::chrono::seconds;
+using std::chrono::microseconds;
+
+int64_t seconds_to_microsends(double seconds)
+{
+	return static_cast<int64_t>(seconds * 10e6);
+}
 
 class Ball
 	{
@@ -77,11 +87,12 @@ class Ball
 				velocityHistory.push_back( Vector2d( 0.0, 0.0 ) );
 			}
 
-			reachPrediction.ball_in_range_time_ = 1000;
+			reachPrediction.ball_in_range_time_ = numeric_limits<int64_t>::max();
 			reachPrediction.ball_inrange_position_ = Vector2d( 0.0, 0.0 );
 			reachPrediction.ball_inrange_velocity_ = Vector2d( 0.0, 0.0 );
 			reachPrediction.goal_ = Vector2d( 0.0, 0.0 );
-			reachPrediction.utime_ = 0;
+			reachPrediction.utime_ = duration_cast<microseconds>(std::chrono::system_clock::now()
+				.time_since_epoch()).count();
 		}
 
 		std::vector<double> GetLinearFit(const std::deque<Vector2d>& data)
@@ -141,7 +152,7 @@ class Ball
 		
 		void updatePrediction( const double outerRadius )
 			{
-			for ( double interval = 0.01; interval < 8.0; interval += 0.01 )
+			for ( double interval = 0.01; interval < 3.0; interval += 0.01 )
 				{
 				Vector4d prediction = predict_coordinate( interval );
 				Vector2d position = Vector2d( prediction.x(), prediction.y() );
@@ -151,7 +162,8 @@ class Ball
 					Vector2d velocity = Vector2d( prediction[2], prediction[3] );
 					reachPrediction.utime_ = std::chrono::duration_cast<std::chrono::microseconds>(
 							std::chrono::system_clock::now().time_since_epoch()).count();
-					reachPrediction.ball_in_range_time_ = reachPrediction.utime_ + 10e6*interval;
+					// Should be interval * 10e6 + utime_of_detection TODO
+					reachPrediction.ball_in_range_time_ = utime + seconds_to_microsends(interval);
 					//cout << "reachPrediction time " << reachPrediction.ball_in_range_time_ << std::endl;
 					reachPrediction.ball_inrange_position_ = position;
 					reachPrediction.ball_inrange_velocity_ = velocity;
