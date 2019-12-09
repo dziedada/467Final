@@ -44,7 +44,7 @@ class Ball
 		cv::Mat meas;  // [x, y]
 		std::vector<double> kf_error_history;
 		std::list< Vector2d > velocityHistory;//( 5, Vector2d( 0.0, 0.0 ), std::deque<Vector2d>);
-
+		const int HISTORY_SIZE = 10;
         friend class ArmPlanner;
 		friend class TrackingVis;
 
@@ -113,7 +113,7 @@ class Ball
             // <<<< Initialization
 
             kf.statePost = state;    
-			for ( int i = 0; i < 5; ++i )
+			for ( int i = 0; i < HISTORY_SIZE; ++i )
 				{
 				velocityHistory.push_back( Vector2d( 0.0, 0.0 ) );
 				}
@@ -205,7 +205,7 @@ class Ball
 				velocityEstimate.y() += it.y();
 				//std::cout << "vel est: " << velocityEstimate << std::endl;
 				}
-			velocityEstimate /= 5.0;
+			velocityEstimate /= (double)HISTORY_SIZE;
 			//std::cout << "vel est final: " << velocityEstimate << std::endl;
 			Vector2d pointEstimate = coordinate + (velocityEstimate * dT);
 			// std::cout << "prediction: ";
