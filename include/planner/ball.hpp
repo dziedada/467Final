@@ -10,6 +10,7 @@
 #include <common/messages/ball_detections_t.hpp>
 #include <common/messages/ball_detection_t.hpp>
 
+#include <opencv2/video/tracking.hpp>
 #include <Eigen/Core>
 
 #include <planner/Prediction.hpp>
@@ -23,6 +24,8 @@
 #include <chrono>
 #include <queue>
 #include <limits>
+
+using cv::Mat;
 
 using Eigen::Vector2d;
 using Eigen::Vector4d;
@@ -51,13 +54,17 @@ class Ball
 		Vector2d coordinate;					// ( x, y )
 		Vector2d prevDetectionPos;
 		Vector2d velocity;					// ( v_x, v_y )
+		Vector2d velocity_coord;
+		Vector2d velocity_coord_avg;
 		Vector2d coordinatePrediction;	// ( x_1, y_2 )
+		// vel calculated by projected points
 
 		std::vector<double> coordLine; // [m, b]
 
 		std::deque< Vector2d > coordHistory;
 		std::deque<double> speedHistory;
 		std::deque< Vector2d > velocityHistory;
+		std::deque< Vector2d > velocityCoordHistory;
 		int HISTORY_SIZE = 10;
 		Prediction reachPrediction;
         friend class ArmPlanner;
@@ -86,7 +93,12 @@ class Ball
 			{
 				velocityHistory.push_back( Vector2d( 0.0, 0.0 ) );
 			}
+			for ( int i = 0; i < HISTORY_SIZE; ++i )
+			{
+				velocityCoordHistory.push_back( Vector2d( 0.0, 0.0 ) );
+			}
 
+			velocity_coord_avg = Vector2d(0.0, 0.0);
 			reachPrediction.ball_in_range_time_ = numeric_limits<int64_t>::max();
 			reachPrediction.ball_inrange_position_ = Vector2d( 0.0, 0.0 );
 			reachPrediction.ball_inrange_velocity_ = Vector2d( 0.0, 0.0 );
@@ -119,7 +131,16 @@ class Ball
 			//https://en.wikibooks.org/wiki/Linear_Algebra/Orthogonal_Projection_Onto_a_Line
 			pt.y() = pt.y() - intercept;
 			Vector2d lineV(1, slope);
-			return ( pt.dot(lineV) / (lineV.dot(lineV)) ) * lineV;
+			// fix: the projected point p is on a line y = kx, not on y = kx + b
+			Vector2d p = ( pt.dot(lineV) / (lineV.dot(lineV)) ) * lineV;
+			p[1] += intercept;
+			return p;
+		}
+
+		void calcAvgVelocity() {
+			velocity_coord_avg = (velocity_coord_avg * HISTORY_SIZE - velocityCoordHistory[0] 
+				+ velocity_coord) / (double)HISTORY_SIZE;
+			// TODO: use avg vel do prediction
 		}
 
 		void update(const ball_detection_t &detection)
@@ -137,14 +158,21 @@ class Ball
             velocityHistory.pop_front();
 			velocityHistory.push_back( velocity );
 
-			coordHistory.pop_front();
-			coordHistory.push_back(detectionPos);
 
 			// speedHistory.pop_front();
 			// speedHistory.push_back((coordHistory.back() - coordHistory.back()-1).norm()/dT);
 			// use a line of best fit to get the coordinate prediction
 			coordLine = GetLinearFit(coordHistory);
 			coordinate = projectPt(detectionPos, coordLine[0], coordLine[1]);
+			
+			velocity_coord = Vector2d( ( coordinate[0] - coordHistory[HISTORY_SIZE - 1][0] ) / dT, ( coordinate[1] - coordHistory[HISTORY_SIZE - 1][1] ) / dT );
+			calcAvgVelocity();
+			velocityCoordHistory.pop_front();
+			velocityCoordHistory.push_back( velocity_coord );
+
+			coordHistory.pop_front();
+			// fix: push coord instead of detection
+			coordHistory.push_back(coordinate);
 
 			utime = detection.utime;
             //std::cout << "utime " << utime << " dT " << dT << std::endl;
@@ -199,6 +227,7 @@ class Ball
 				velocityEstimate.y() += it.y();
 				}
 			velocityEstimate /= (double)HISTORY_SIZE;
+
 			//std::cout << "vel est final: " << velocityEstimate << std::endl;
 			Vector2d pointEstimate = coordinate + (velocityEstimate * dT);
 			// std::cout << "prediction: ";
