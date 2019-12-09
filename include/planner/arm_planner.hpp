@@ -136,7 +136,7 @@ class ArmPlanner
                 {
 					//std::cout << "ball not in corresponded" << std::endl;
                     //std::cout << "not corresponded";
-                    std::cout << it->odds << std::endl;
+                    //std::cout << it->odds << std::endl;
                     if ( it->odds < -10 )
                         {
                         // purge ball
@@ -169,7 +169,7 @@ class ArmPlanner
 			if ( bestBall && convertUTimeToSeconds( getUtime() - lastUpdateArm ) > 0.02 )
 				{
 				std::cout << "x: " << bestBall->reachPrediction.ball_inrange_position_[0]
-					<< " y: " << best->reachPrediction.ball_inrange_position_[1] << std::endl;
+					<< " y: " << bestBall->reachPrediction.ball_inrange_position_[1] << std::endl;
 				publishPlan( bestBall->reachPrediction.ball_inrange_position_ );
 				}
 
