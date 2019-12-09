@@ -93,8 +93,8 @@ void TrackingVis::update()
         // Draw Circle for position
         cv::circle(display, cv::Point(x, y), CIRCLE_RADIUS, pixels, cv::FILLED);
         // Compute Line to position in configured number of seconds
-        int future_x = ball.velocity[X_AXIS] * PREDICTION_TIME * SCALE + x;
-        int future_y = ball.velocity[Y_AXIS] * PREDICTION_TIME * SCALE + y;
+        int future_x = ball.velocity_coord_avg[X_AXIS] * PREDICTION_TIME * SCALE + x;
+        int future_y = ball.velocity_coord_avg[Y_AXIS] * PREDICTION_TIME * SCALE + y;
         // Draw the line to the prediction
         cv::line(display, cv::Point(x, y), cv::Point(future_x, future_y), pixels, LINE_THICKNESS);
     }
