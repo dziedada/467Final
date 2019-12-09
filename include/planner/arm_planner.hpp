@@ -69,7 +69,6 @@ class ArmPlanner
 
         int currentId = 0;
 		int64_t lastUpdateArm = 0;
-        // TODO: Add multi-ball tracking
         void updateBalls(const ball_detections_t &newBalls )
         {
             std::lock_guard<std::mutex> lck(*mtx);
@@ -79,12 +78,10 @@ class ArmPlanner
 
             double corrThreshold = 0.5;
             std::vector< Ball * > corresponded;
-            //std::cout << "detected: " << newBalls.detections.size() << std::endl;
             for (size_t i = 0; i < newBalls.detections.size(); ++i)
             {
                 ball_detection_t detection = newBalls.detections[i];
                 Eigen::Vector2d detectionPosition( detection.position[0], detection.position[1] );
-                //std::cout << "Detection " << detectionPosition.x() << " " << detectionPosition.y() << std::endl;
 
                 Ball * closest;
                 double closestDistance = DBL_MAX;
@@ -98,14 +95,9 @@ class ArmPlanner
 
                     Eigen::Vector4d predictionState = ball.predict_coordinate( newBalls.utime );
                     Eigen::Vector2d prediction( predictionState.x(), predictionState.y() );
-                    // std::cout << "b= " << ball.coordinate << std::endl;
-                    // std::cout << "p= " << predictionState << std::endl;
                     double distance = (prediction - detectionPosition).norm();
                     if ( distance < corrThreshold && distance < closestDistance )
                         {
-						//std::cout << "b= " << ball.coordinate << std::endl;
-						//std::cout << "p= " << predictionState << std::endl;
-
                         closest = &ball;
                         closestDistance = distance;
                         }
@@ -124,53 +116,46 @@ class ArmPlanner
                     corresponded.push_back( closest );
                 }
             }
-            //cout << "enter purge code " << endl;
+
             Ball * bestBall = nullptr;
 			int64_t bestTime = LONG_MAX; // TODO get this to be max of int64_t
-			//std::cout << "bestTime=" << bestTime << std::endl;
             for( auto it = balls.begin(); it != balls.end(); )
             {
                 if(it == balls.end()) break;
-                //std::cout << "checking new ball" << std::endl;
                 if ( corresponded.end() == std::find( corresponded.cbegin(), corresponded.cend(), &*it ) )
                 {
-					//std::cout << "ball not in corresponded" << std::endl;
-                    //std::cout << "not corresponded";
-                    //std::cout << it->odds << std::endl;
                     if ( it->odds < -10 )
                         {
                         // purge ball
-                        //std::cout << "Purged ball... "<< std::endl;// << balls.size() << " left";
                         it = balls.erase( it );
-                        //std::cout << "Purged ball.2.. "<< std::endl;
                         }
                     else
                         {
-                        //std::cout << "decreasing odds" << std::endl;
                         it->odds -= 1;
                         ++it;
                         }
                 }
                 else
                 {
-					//std::cout << "ball in corresponded" << std::endl;
                     if ( it->reachPrediction.ball_in_range_time_ < bestTime )
 						{
-						//std::cout << "reachedPrediction" << std::endl;
                         bestTime = it->reachPrediction.ball_in_range_time_;
 						bestBall = &*it;
-                        //std::cout << "set best" << std::endl;
 						}
                     ++it;
                 }
             }
-            //std::cout << balls.size() << " balls left." << std::endl;
 			//outer_loop_controller.update_target( bestBall->reachPrediction );
 			if ( bestBall && convertUTimeToSeconds( getUtime() - lastUpdateArm ) > 0.02 )
 				{
-				std::cout << "x: " << bestBall->reachPrediction.ball_inrange_position_[0]
-					<< " y: " << bestBall->reachPrediction.ball_inrange_position_[1] << std::endl;
-				publishPlan( bestBall->reachPrediction.ball_inrange_position_ );
+				double x = bestBall->reachPrediction.ball_inrange_position_[0];
+				double y = bestBall->reachPrediction.ball_inrange_position_[1];
+				double innerRadius = 0.13; // TODO i thought we might need this to restrict noisy velocities
+				if ( x > 0 && y != 0 && bestBall->reachPrediction.ball_inrange_position_.norm() > innerRadius )
+					{
+					std::cout << "x: " << x << " y: " << y << std::endl;
+					publishPlan( bestBall->reachPrediction.ball_inrange_position_ );
+					}
 				}
 
             //std::cout << "corresponded: " << balls.size() << std::endl;
