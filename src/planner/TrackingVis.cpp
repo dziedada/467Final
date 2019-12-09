@@ -38,9 +38,8 @@ TrackingVis::TrackingVis(const std::shared_ptr<std::condition_variable>& cond_va
 void TrackingVis::update()
 {
     cv::Mat display(DISPLAY_X, DISPLAY_Y, CV_8UC3, cv::Scalar(0, 0, 0));
-    cv::Scalar pixels = blue;
-    cv::line(display, cv::Point(250, 250), cv::Point(500, 500), pixels, LINE_THICKNESS);
-    cv::line(display, cv::Point(0, 250), cv::Point(500, 250), pixels, LINE_THICKNESS);
+    cv::line(display, cv::Point(250, 250), cv::Point(500, 500), white, LINE_THICKNESS);
+    cv::line(display, cv::Point(0, 250), cv::Point(500, 250), white, LINE_THICKNESS);
     for (const Ball& ball : balls_)
     {
         // Compute ball location
