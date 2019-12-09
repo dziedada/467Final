@@ -80,21 +80,13 @@ class arm_plan_t
         inline int _encodeNoHash(void *buf, int offset, int maxlen) const;
         inline int _getEncodedSizeNoHash() const;
         inline int _decodeNoHash(const void *buf, int offset, int maxlen);
-<<<<<<< 974295989854fba8eb06df8a915fb9a4f933b5a1
-
-=======
->>>>>>> Converted vision-driver to use lcm and some more changes.
-        inline static int64_t _computeHash(const __lcm_hash_ptr *p);
+        inline static uint64_t _computeHash(const __lcm_hash_ptr *p);
 };
 
 int arm_plan_t::encode(void *buf, int offset, int maxlen) const
 {
     int pos = 0, tlen;
-<<<<<<< 974295989854fba8eb06df8a915fb9a4f933b5a1
     int64_t hash = (int64_t)getHash();
-=======
-    int64_t hash = getHash();
->>>>>>> Converted vision-driver to use lcm and some more changes.
 
     tlen = __int64_t_encode_array(buf, offset + pos, maxlen - pos, &hash, 1);
     if(tlen < 0) return tlen; else pos += tlen;
@@ -219,16 +211,9 @@ int arm_plan_t::_getEncodedSizeNoHash() const
     return enc_size;
 }
 
-<<<<<<< 974295989854fba8eb06df8a915fb9a4f933b5a1
-
-int64_t arm_plan_t::_computeHash(const __lcm_hash_ptr *)
+uint64_t arm_plan_t::_computeHash(const __lcm_hash_ptr *)
 {
     uint64_t hash = 0xad0fbb7edfdde504LL;
-=======
-int64_t arm_plan_t::_computeHash(const __lcm_hash_ptr *)
-{
-    int64_t hash = 0xad0fbb7edfdde504LL;
->>>>>>> Converted vision-driver to use lcm and some more changes.
     return (hash<<1) + ((hash>>63)&1);
 }
 

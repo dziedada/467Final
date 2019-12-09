@@ -70,13 +70,13 @@ class rgbd_image_t
         inline int _encodeNoHash(void *buf, int offset, int maxlen) const;
         inline int _getEncodedSizeNoHash() const;
         inline int _decodeNoHash(const void *buf, int offset, int maxlen);
-        inline static int64_t _computeHash(const __lcm_hash_ptr *p);
+        inline static uint64_t _computeHash(const __lcm_hash_ptr *p);
 };
 
 int rgbd_image_t::encode(void *buf, int offset, int maxlen) const
 {
     int pos = 0, tlen;
-    int64_t hash = getHash();
+    int64_t hash = (int64_t)getHash();
 
     tlen = __int64_t_encode_array(buf, offset + pos, maxlen - pos, &hash, 1);
     if(tlen < 0) return tlen; else pos += tlen;
@@ -159,7 +159,7 @@ int rgbd_image_t::_getEncodedSizeNoHash() const
     return enc_size;
 }
 
-int64_t rgbd_image_t::_computeHash(const __lcm_hash_ptr *p)
+uint64_t rgbd_image_t::_computeHash(const __lcm_hash_ptr *p)
 {
     const __lcm_hash_ptr *fp;
     for(fp = p; fp != NULL; fp = fp->parent)
@@ -167,7 +167,7 @@ int64_t rgbd_image_t::_computeHash(const __lcm_hash_ptr *p)
             return 0;
     const __lcm_hash_ptr cp = { p, (void*)rgbd_image_t::getHash };
 
-    int64_t hash = 0xf4ea25c8c999ba68LL +
+    uint64_t hash = 0xf4ea25c8c999ba68LL +
          rgb_image_t::_computeHash(&cp) +
          depth_image_t::_computeHash(&cp);
 
