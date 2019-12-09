@@ -166,13 +166,14 @@ class ArmPlanner
             }
             //std::cout << balls.size() << " balls left." << std::endl;
 			//outer_loop_controller.update_target( bestBall->reachPrediction );
-			if ( bestBall && convertUTimeToSeconds( getUtime() - lastUpdateArm ) > 0.1 )
+			if ( bestBall && convertUTimeToSeconds( getUtime() - lastUpdateArm ) > 0.02 )
 				{
-				std::cout << "x: " << bestBall->reachPrediction.ball_inrange_position_[0] << std::endl;
+				std::cout << "x: " << bestBall->reachPrediction.ball_inrange_position_[0]
+					<< " y: " << best->reachPrediction.ball_inrange_position_[1] << std::endl;
 				publishPlan( bestBall->reachPrediction.ball_inrange_position_ );
 				}
 
-            std::cout << "corresponded: " << balls.size() << std::endl;
+            //std::cout << "corresponded: " << balls.size() << std::endl;
             cond_var->notify_all();
         }
 
@@ -285,8 +286,8 @@ class ArmPlanner
             std::vector<std::vector< double > > waypoints( 1, std::vector<double>(3, 0));
 
             // Flip X and Y for Arm Coordinate system
-            waypoints[0][0] = endpoint[1];
-            waypoints[0][1] = endpoint[0];
+            waypoints[0][0] = endpoint[0];
+            waypoints[0][1] = endpoint[1];
 			waypoints[0][2] = 1;
             path.waypoints = waypoints;
             path.speed = 1.0;
@@ -295,9 +296,6 @@ class ArmPlanner
             path.angles = angles;
 
             lcm->publish( "ARM_PATH", &path );
-
-            // path.waypoints[0][0] = pr.second.x;
-            // path.waypoints[0][1] = pr.second.y;
             }
 
         const std::vector<Ball>& getBalls()

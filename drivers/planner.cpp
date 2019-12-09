@@ -49,8 +49,8 @@ public:
     void handleEKFMessage( const lcm::ReceiveBuffer*, const std::string &channel, 
         const ball_detections_t *ball )
     {
-		cout << "Handling message" << endl;
-        cout << " update received at " << ball->utime << endl;
+		//cout << "Handling message" << endl;
+        //cout << " update received at " << ball->utime << endl;
 
         planner->updateBalls( *ball );
 
