@@ -11,7 +11,7 @@ public:
     Prediction prev_pred;
     int mode;
 private:
-    void update_target(const Prediction& new_target)
+    void update_target(const Prediction& new_target);
 
     void update_curpose(const Eigen::Vector3d& new_pose);
 
