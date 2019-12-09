@@ -144,16 +144,18 @@ class Ball
 		
 		void updatePrediction( const double outerRadius )
 			{
-			for ( double interval = 0.05; interval < 10; interval += 0.05 )
+			for ( double interval = 0.05; interval < 10.0; interval += 0.05 )
 				{
 				Vector4d prediction = predict_coordinate( interval );
 				Vector2d position = Vector2d( prediction.x(), prediction.y() );
+				std::cout << "distance = " << position.norm() << std::endl;
 				if ( position.norm() < outerRadius )
 					{
 					Vector2d velocity = Vector2d( prediction[2], prediction[3] );
 					reachPrediction.utime_ = std::chrono::duration_cast<std::chrono::microseconds>(
 							std::chrono::system_clock::now().time_since_epoch()).count();
 					reachPrediction.ball_in_range_time_ = reachPrediction.utime_ + 10e6*interval;
+					cout << "reachPrediction time " << reachPrediction.ball_in_range_time_ << std::endl;
 					reachPrediction.ball_inrange_position_ = position;
 					reachPrediction.ball_inrange_velocity_ = velocity;
 					reachPrediction.goal_ = position;

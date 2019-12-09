@@ -124,7 +124,8 @@ class ArmPlanner
             }
             cout << "enter purge code " << endl;
             Ball * bestBall = nullptr;
-			int64_t bestTime = ULLONG_MAX;
+			int64_t bestTime = LONG_MAX; // TODO get this to be max of int64_t
+			//std::cout << "bestTime=" << bestTime << std::endl;
             for( auto it = balls.begin(); it != balls.end(); )
             {
                 if(it == balls.end()) break;
@@ -153,7 +154,7 @@ class ArmPlanner
 					std::cout << "ball in corresponded" << std::endl;
                     if ( it->reachPrediction.ball_in_range_time_ < bestTime )
 						{
-						std::cout << "reachPrediction" << std::endl;
+						std::cout << "reachedPrediction" << std::endl;
                         bestTime = it->reachPrediction.ball_in_range_time_;
 						bestBall = &*it;
                         std::cout << "set best" << std::endl;
