@@ -25,10 +25,11 @@ constexpr int LINE_THICKNESS = 1;
 constexpr int CIRCLE_RADIUS = 3;
 
 const cv::Scalar green(0, 230, 0);
-const cv::Scalar orange(200, 100, 20);
-const cv::Scalar blue(0, 0, 230);
+const cv::Scalar orange(20, 100, 200);
+const cv::Scalar blue(230, 0, 0);
 const cv::Scalar white(230, 230, 230);
 const cv::Scalar detection_color = white;
+// const cv::Scalar best_prediction_color();
 
 TrackingVis::TrackingVis(const std::shared_ptr<std::condition_variable>& cond_var,
     const std::shared_ptr<std::mutex>& mtx, const std::vector<Ball>& balls) :
