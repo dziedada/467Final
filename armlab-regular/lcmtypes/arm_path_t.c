@@ -21,8 +21,9 @@ uint64_t __arm_path_t_hash_recursive(const __lcm_hash_ptr *p)
     cp.v = (void*)__arm_path_t_get_hash;
     (void) cp;
 
-    uint64_t hash = (uint64_t)0x79da7c220ec69bcfLL
+    uint64_t hash = (uint64_t)0x1d6aa5865aeef863LL
          + __int32_t_hash_recursive(&cp)
+         + __double_hash_recursive(&cp)
          + __double_hash_recursive(&cp)
          + __int32_t_hash_recursive(&cp)
          + __double_hash_recursive(&cp)
@@ -58,6 +59,9 @@ int __arm_path_t_encode_array(void *buf, int offset, int maxlen, const arm_path_
             if (thislen < 0) return thislen; else pos += thislen;
         }
         }
+
+        thislen = __double_encode_array(buf, offset + pos, maxlen - pos, p[element].wrist_angles, p[element].waypoints_num);
+        if (thislen < 0) return thislen; else pos += thislen;
 
         thislen = __int32_t_encode_array(buf, offset + pos, maxlen - pos, &(p[element].angles_num), 1);
         if (thislen < 0) return thislen; else pos += thislen;
@@ -103,6 +107,8 @@ int __arm_path_t_encoded_array_size(const arm_path_t *p, int elements)
         }
         }
 
+        size += __double_encoded_array_size(p[element].wrist_angles, p[element].waypoints_num);
+
         size += __int32_t_encoded_array_size(&(p[element].angles_num), 1);
 
         { int a;
@@ -129,7 +135,7 @@ size_t arm_path_t_struct_size(void)
 
 int arm_path_t_num_fields(void)
 {
-    return 5;
+    return 6;
 }
 
 int arm_path_t_get_field(const arm_path_t *p, int i, lcm_field_t *f)
@@ -162,6 +168,17 @@ int arm_path_t_get_field(const arm_path_t *p, int i, lcm_field_t *f)
         }
         
         case 2: {
+            f->name = "wrist_angles";
+            f->type = LCM_FIELD_DOUBLE;
+            f->typestr = "double";
+            f->num_dim = 1;
+            f->dim_size[0] = p->waypoints_num;
+            f->dim_is_variable[0] = 1;
+            f->data = (void *) &p->wrist_angles;
+            return 0;
+        }
+        
+        case 3: {
             f->name = "angles_num";
             f->type = LCM_FIELD_INT32_T;
             f->typestr = "int32_t";
@@ -170,7 +187,7 @@ int arm_path_t_get_field(const arm_path_t *p, int i, lcm_field_t *f)
             return 0;
         }
         
-        case 3: {
+        case 4: {
             f->name = "angles";
             f->type = LCM_FIELD_DOUBLE;
             f->typestr = "double";
@@ -183,7 +200,7 @@ int arm_path_t_get_field(const arm_path_t *p, int i, lcm_field_t *f)
             return 0;
         }
         
-        case 4: {
+        case 5: {
             f->name = "speed";
             f->type = LCM_FIELD_DOUBLE;
             f->typestr = "double";
@@ -232,6 +249,10 @@ int __arm_path_t_decode_array(const void *buf, int offset, int maxlen, arm_path_
         }
         }
 
+        p[element].wrist_angles = (double*) lcm_malloc(sizeof(double) * p[element].waypoints_num);
+        thislen = __double_decode_array(buf, offset + pos, maxlen - pos, p[element].wrist_angles, p[element].waypoints_num);
+        if (thislen < 0) return thislen; else pos += thislen;
+
         thislen = __int32_t_decode_array(buf, offset + pos, maxlen - pos, &(p[element].angles_num), 1);
         if (thislen < 0) return thislen; else pos += thislen;
 
@@ -265,6 +286,9 @@ int __arm_path_t_decode_array_cleanup(arm_path_t *p, int elements)
         }
         }
         if (p[element].waypoints) free(p[element].waypoints);
+
+        __double_decode_array_cleanup(p[element].wrist_angles, p[element].waypoints_num);
+        if (p[element].wrist_angles) free(p[element].wrist_angles);
 
         __int32_t_decode_array_cleanup(&(p[element].angles_num), 1);
 
@@ -317,6 +341,9 @@ int __arm_path_t_clone_array(const arm_path_t *p, arm_path_t *q, int elements)
             __double_clone_array(p[element].waypoints[a], q[element].waypoints[a], 3);
         }
         }
+
+        q[element].wrist_angles = (double*) lcm_malloc(sizeof(double) * q[element].waypoints_num);
+        __double_clone_array(p[element].wrist_angles, q[element].wrist_angles, p[element].waypoints_num);
 
         __int32_t_clone_array(&(p[element].angles_num), &(q[element].angles_num), 1);
 
