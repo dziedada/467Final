@@ -39,8 +39,8 @@ class ArmPlanner
         lcm::LCM *lcm;
         OuterLoopController outer_loop_controller;
 
-		std::vector< Point < double > > goals;
-		std::vector< Ball > balls;
+	std::vector< Point < double > > goals;
+	std::vector< Ball > balls;
         
 
         double armInnerRadius = 0.100;
@@ -51,7 +51,7 @@ class ArmPlanner
         double elbowJointLength = 0.1;
 
 	public:
-		ArmPlanner(lcm::LCM* lcm_) : 
+	ArmPlanner(lcm::LCM* lcm_) : 
             cond_var {std::shared_ptr<std::condition_variable>(new std::condition_variable())},
             mtx {std::shared_ptr<std::mutex>(new std::mutex())}, lcm {lcm_},
             outer_loop_controller {OuterLoopController(lcm_)}
@@ -97,10 +97,9 @@ class ArmPlanner
                     double distance = (prediction - detectionPosition).norm();
                     if ( distance < corrThreshold && distance < closestDistance )
                         {
-                        
-                        //std::cout << "Prediction " << prediction.x() << " " << prediction.y() << std::endl;
-                        std::cout << "Distance " << distance << std::endl;
-                        std:: cout << "Velocity: " << ball.getVel() << std::endl;
+						std::cout << "b= " << ball.coordinate << std::endl;
+						std::cout << "p= " << predictionState << std::endl;
+
                         closest = &ball;
                         closestDistance = distance;
                         }

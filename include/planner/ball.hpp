@@ -17,6 +17,8 @@
 #include <iostream>
 #include <vector>
 #include <utility>
+#include <list>
+#include <deque>
 
 using cv::Mat;
 
@@ -41,6 +43,7 @@ class Ball
 		cv::Mat state; // [x, y, v_x, v_y]
 		cv::Mat meas;  // [x, y]
 		std::vector<double> kf_error_history;
+		std::list< Vector2d > velocityHistory;//( 5, Vector2d( 0.0, 0.0 ), std::deque<Vector2d>);
 
         friend class ArmPlanner;
 		friend class TrackingVis;
@@ -110,14 +113,21 @@ class Ball
             // <<<< Initialization
 
             kf.statePost = state;    
+			for ( int i = 0; i < 5; ++i )
+				{
+				velocityHistory.push_back( Vector2d( 0.0, 0.0 ) );
+				}
 		}
 
 		void update(const ball_detection_t &detection)
 		{
             odds += 1;
 			double dT = (double)(detection.utime - utime) / (double)1000000;
-            coordinate = Vector2d( detection.position[0], detection.position[1] );
             velocity = Vector2d( ( detection.position[0] - coordinate[0] ) / dT, ( detection.position[1] - coordinate[1] ) / dT );
+            coordinate = Vector2d( detection.position[0], detection.position[1] );
+			
+			velocityHistory.pop_front();
+			velocityHistory.push_back( velocity );
 
 			utime = detection.utime;
             std::cout << "utime " << utime << " dT " << dT << std::endl;
@@ -128,7 +138,7 @@ class Ball
 
             // for error checking
             Mat prediction = kf.predict();
-            coordinatePrediction = Vector2d(prediction.at<double>(0),prediction.at<double>(1));
+            //coordinatePrediction = Vector2d(prediction.at<double>(0),prediction.at<double>(1));
 
             // state estimate
             meas.at<double>(0) = coordinate.x();
@@ -140,14 +150,14 @@ class Ball
             state = kf.correct(meas);
             Vector2d estimatePt(state.at<double>(0),state.at<double>(1));
             Vector2d estimateVel(state.at<double>(2),state.at<double>(3));
-            std::cout << "ball: " << coordinate.x() << ", " << coordinate.y() << std::endl;
+            /*std::cout << "ball: " << coordinate.x() << ", " << coordinate.y() << std::endl;
             std::cout << "meas: " << detection.position[0] << " " << detection.position[1] << std::endl;
             std::cout << "predictPos:  " << coordinatePrediction << std::endl;
             std::cout << "updatepos: " << estimatePt << std::endl;
             std::cout << "updateVel: " << estimateVel << std::endl;
-            std::cout << "DT: " << dT << std::endl;
+            std::cout << "DT: " << dT << std::endl;*/
             kf_error_history.push_back( (estimatePt - coordinatePrediction).norm() );
-            std::cout << "error: " << (estimatePt - coordinatePrediction).norm() << std::endl;
+            //std::cout << "error: " << (estimatePt - coordinatePrediction).norm() << std::endl;
 
 		}
 
@@ -176,13 +186,28 @@ class Ball
         // TODO refactor to predict state
 		Vector4d predict_coordinate( double dT)
 		{
+			// EKF Estimation
 			// update Matrix A for correct velocity estimate 
 			kf.transitionMatrix.at<double>(2) = dT;
             kf.transitionMatrix.at<double>(7) = dT;
             auto predState = kf.predict();
-            //std::cout << "dT " << dT << " dx " << predState.at<double>(2) << " dy " << predState.at<double>(3) << endl;
-            return Vector4d(predState.at<double>(0), predState.at<double>(1), 
-            			    predState.at<double>(2), predState.at<double>(3));
+			
+			// Point History Estimation ( using last 5 points )
+			Vector2d velocityEstimate( 0.0, 0.0 );
+			for ( auto &it: velocityHistory )
+				{
+				velocityEstimate.x() += it.x();
+				velocityEstimate.y() += it.y();
+				//std::cout << velocityEstimate << std::endl;
+				}
+			velocityEstimate / 5.0;
+
+			Vector2d pointEstimate = coordinate + (velocityEstimate * dT);
+            //std::cout << "dT " << dT << " dx " << velocityEstimate.x() << " dy " << velocityEstimate.y() << endl;
+            //return Vector4d(predState.at<double>(0), predState.at<double>(1), 
+            			    //predState.at<double>(2), predState.at<double>(3));
+			return Vector4d( pointEstimate.x(), pointEstimate.y(),
+							velocityEstimate.x(), velocityEstimate.y());
 		}
 
 		// check to see if the ball will reach radius of us within
