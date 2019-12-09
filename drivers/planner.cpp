@@ -43,6 +43,7 @@ const char* GUI_FLAG = "-g";
 class Handler
 {
 public:
+    shared_ptr<ArmPlanner> planner;
     Handler(shared_ptr<ArmPlanner> planner_in) : planner {planner_in} {}
 
     void handleEKFMessage( const lcm::ReceiveBuffer*, const std::string &channel, 
@@ -63,7 +64,6 @@ public:
     }
     
 private:
-    shared_ptr<ArmPlanner> planner;
     int64_t prevTime = 0;
 };
 
@@ -109,6 +109,9 @@ int main(int argc, char ** argv)
 
     // Start lcm thread
     std::thread(handle_loop, &lcm).detach();
+    std::thread statemachineThread([&handler]() {
+        handler.planner.runStateMachine();
+    });
 
     if (view_display)
     {
