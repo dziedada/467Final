@@ -139,23 +139,23 @@ class Ball
 			coordinate = projectPt(detectionPos, coordLine[0], coordLine[1]);
 
 			utime = detection.utime;
-            std::cout << "utime " << utime << " dT " << dT << std::endl;
+            //std::cout << "utime " << utime << " dT " << dT << std::endl;
 		}
 		
 		void updatePrediction( const double outerRadius )
 			{
-			for ( double interval = 0.05; interval < 10.0; interval += 0.05 )
+			for ( double interval = 0.01; interval < 8.0; interval += 0.01 )
 				{
 				Vector4d prediction = predict_coordinate( interval );
 				Vector2d position = Vector2d( prediction.x(), prediction.y() );
-				std::cout << "distance = " << position.norm() << std::endl;
+				//std::cout << "distance = " << position.norm() << std::endl;
 				if ( position.norm() < outerRadius )
 					{
 					Vector2d velocity = Vector2d( prediction[2], prediction[3] );
 					reachPrediction.utime_ = std::chrono::duration_cast<std::chrono::microseconds>(
 							std::chrono::system_clock::now().time_since_epoch()).count();
 					reachPrediction.ball_in_range_time_ = reachPrediction.utime_ + 10e6*interval;
-					cout << "reachPrediction time " << reachPrediction.ball_in_range_time_ << std::endl;
+					//cout << "reachPrediction time " << reachPrediction.ball_in_range_time_ << std::endl;
 					reachPrediction.ball_inrange_position_ = position;
 					reachPrediction.ball_inrange_velocity_ = velocity;
 					reachPrediction.goal_ = position;
