@@ -57,7 +57,7 @@ class ArmPlanner
             mtx {std::shared_ptr<std::mutex>(new std::mutex())}, lcm {lcm_},
             outer_loop_controller {OuterLoopController(lcm_)}
 			{
-                std::thread([this]() {this->outer_loop_controller.runStateMachine();}).detach();
+                // std::thread([this]() {this->outer_loop_controller.runStateMachine();}).detach();
 			}
 
         void addGoals( std::vector< Point< double > > newGoals )
