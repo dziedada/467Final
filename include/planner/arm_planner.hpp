@@ -127,6 +127,7 @@ class ArmPlanner
             {
                 if ( corresponded.end() == std::find( corresponded.cbegin(), corresponded.cend(), &*it ) )
                 {
+					//std::cout << "not corresponded";
                     if ( (*it).odds < -10 )
                         {
                         // purge ball
@@ -135,7 +136,7 @@ class ArmPlanner
                         }
                     else
                         {
-                        (*it).odds -= -1;
+                        (*it).odds -= 1;
                         ++it;
                         }
                 }
