@@ -143,9 +143,9 @@ class StateMachine():
             target = self.togo.pop(0)
             wrist_angle = self.wrist_angles[id]
             id += 1
-            angles = IK((target[0], target[1], 0), target[2])
+            # wrist_angle is the angle in the frame of arm
+            angles = IK((target[0], target[1], 0), target[2], wrist_angle)
             if angles:
-                angles[len(angles) - 1] = wrist_angle
                 self.rexarm.move_to_target_angles(angles, self.speed_norm, False)
         self.next_state = "idle"
         self.togo_lock.release()
