@@ -3,11 +3,15 @@
  */
 struct arm_path_t
 {
+	// waypoints method
 	int32_t waypoints_num;
 	// the third value is mode: 1 or 2
 	double waypoints[waypoints_num][3];
 	double wrist_angles[waypoints_num];
+
+	// angles method
 	int32_t angles_num;
 	double angles[angles_num][4]; 
+	
 	double speed;
 }

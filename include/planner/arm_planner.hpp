@@ -37,7 +37,8 @@ using Eigen::Vector4d;
 
 constexpr int MAX_LOG_ODDS = 5;
 constexpr int MIN_LOG_ODDS = -5;
-constexpr double REACHABLE_RADIUS = 0.21;
+constexpr double REACHABLE_RADIUS = 0.19;
+constexpr double INNER_RADIUS = 0.08;
 
 class ArmPlanner
 	{
@@ -156,8 +157,7 @@ class ArmPlanner
 				{
 				double x = bestBall->reachPrediction.ball_inrange_position_[0];
 				double y = bestBall->reachPrediction.ball_inrange_position_[1];
-				double innerRadius = 0.13; // TODO i thought we might need this to restrict noisy velocities
-				if ( x > 0 && y != 0 && bestBall->reachPrediction.ball_inrange_position_.norm() > innerRadius )
+				if ( x > 0 && y != 0.0 && bestBall->reachPrediction.ball_inrange_position_.norm() > INNER_RADIUS )
 					{
 					std::cout << "x: " << y << " y: " << x << std::endl;
 					publishPlan( bestBall->reachPrediction.ball_inrange_position_ );
@@ -275,12 +275,14 @@ class ArmPlanner
             path.waypoints_num = 1;
             
             std::vector<std::vector< double > > waypoints( 1, std::vector<double>(3, 0));
+            std::vector< double > wrist_angles( 1, 0 );
 
             // Flip X and Y for Arm Coordinate system
             waypoints[0][0] = endpoint[1];
             waypoints[0][1] = endpoint[0];
 			waypoints[0][2] = 1;
             path.waypoints = waypoints;
+            path.wrist_angles = wrist_angles;
             path.speed = 1.0;
             path.angles_num = 1;
             std::vector<std::vector< double > > angles( 1, std::vector<double>(4, 0));

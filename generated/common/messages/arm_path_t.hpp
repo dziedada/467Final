@@ -23,6 +23,8 @@ class arm_path_t
 
         std::vector< std::vector< double > > waypoints;
 
+        std::vector< double > wrist_angles;
+
         int32_t    angles_num;
 
         std::vector< std::vector< double > > angles;
@@ -73,13 +75,13 @@ class arm_path_t
         inline int _encodeNoHash(void *buf, int offset, int maxlen) const;
         inline int _getEncodedSizeNoHash() const;
         inline int _decodeNoHash(const void *buf, int offset, int maxlen);
-        inline static uint64_t _computeHash(const __lcm_hash_ptr *p);
+        inline static int64_t _computeHash(const __lcm_hash_ptr *p);
 };
 
 int arm_path_t::encode(void *buf, int offset, int maxlen) const
 {
     int pos = 0, tlen;
-    int64_t hash = (int64_t)getHash();
+    int64_t hash = getHash();
 
     tlen = __int64_t_encode_array(buf, offset + pos, maxlen - pos, &hash, 1);
     if(tlen < 0) return tlen; else pos += tlen;
@@ -133,6 +135,11 @@ int arm_path_t::_encodeNoHash(void *buf, int offset, int maxlen) const
         if(tlen < 0) return tlen; else pos += tlen;
     }
 
+    if(this->waypoints_num > 0) {
+        tlen = __double_encode_array(buf, offset + pos, maxlen - pos, &this->wrist_angles[0], this->waypoints_num);
+        if(tlen < 0) return tlen; else pos += tlen;
+    }
+
     tlen = __int32_t_encode_array(buf, offset + pos, maxlen - pos, &this->angles_num, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
@@ -163,6 +170,12 @@ int arm_path_t::_decodeNoHash(const void *buf, int offset, int maxlen)
         }
     }
 
+    if(this->waypoints_num) {
+        this->wrist_angles.resize(this->waypoints_num);
+        tlen = __double_decode_array(buf, offset + pos, maxlen - pos, &this->wrist_angles[0], this->waypoints_num);
+        if(tlen < 0) return tlen; else pos += tlen;
+    }
+
     tlen = __int32_t_decode_array(buf, offset + pos, maxlen - pos, &this->angles_num, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
@@ -186,15 +199,16 @@ int arm_path_t::_getEncodedSizeNoHash() const
     int enc_size = 0;
     enc_size += __int32_t_encoded_array_size(NULL, 1);
     enc_size += this->waypoints_num * __double_encoded_array_size(NULL, 3);
+    enc_size += __double_encoded_array_size(NULL, this->waypoints_num);
     enc_size += __int32_t_encoded_array_size(NULL, 1);
     enc_size += this->angles_num * __double_encoded_array_size(NULL, 4);
     enc_size += __double_encoded_array_size(NULL, 1);
     return enc_size;
 }
 
-uint64_t arm_path_t::_computeHash(const __lcm_hash_ptr *)
+int64_t arm_path_t::_computeHash(const __lcm_hash_ptr *)
 {
-    uint64_t hash = 0x79da7c220ec69bcfLL;
+    int64_t hash = 0x1d6aa5865aeef863LL;
     return (hash<<1) + ((hash>>63)&1);
 }
 
