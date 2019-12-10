@@ -19,6 +19,7 @@
 #include <lcm/lcm-cpp.hpp>
 #include <Eigen/Core>
 
+#include <algorithm>
 #include <cmath>
 #include <climits>
 #include <cfloat>
@@ -142,7 +143,7 @@ class ArmPlanner
                         bestTime = it->reachPrediction.ball_in_range_time_;
 						bestBall = &*it;
 						}
-                    ++it;
+                    it->odds = std::max(it->odds, 10);
                 }
             }
 			//outer_loop_controller.update_target( bestBall->reachPrediction );
