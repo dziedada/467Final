@@ -25,7 +25,7 @@ constexpr int DISPLAY_Y_ZERO = 250;
 constexpr int DISPLAY_X_ZERO = 250;
 constexpr int X_AXIS = 1;
 constexpr int Y_AXIS = 0;
-constexpr float PREDICTION_TIME = 0.5; // Units are seconds
+constexpr float PREDICTION_TIME = 0.1; // Units are seconds
 constexpr int LINE_THICKNESS = 1;
 constexpr int CIRCLE_RADIUS = 3;
 constexpr int64_t MAX_PRED_TIME_DIFF = 400; // Units are milliseconds
@@ -95,8 +95,9 @@ void TrackingVis::update()
         // Compute Line to position in configured number of seconds
         int future_x = ball.velocity_coord_avg[X_AXIS] * PREDICTION_TIME * SCALE + x;
         int future_y = ball.velocity_coord_avg[Y_AXIS] * PREDICTION_TIME * SCALE + y;
-        // Draw the line to the prediction
-        cv::line(display, cv::Point(x, y), cv::Point(future_x, future_y), pixels, LINE_THICKNESS);
+        // Draw the line to the prediction (velocity line, not "Prediction" line)
+        cv::arrowedLine(display, cv::Point(x, y), cv::Point(future_x, future_y), 
+            pixels, LINE_THICKNESS);
     }
     cv::imshow("Tracking Visualization", display);
     cv::waitKey(1);
