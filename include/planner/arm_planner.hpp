@@ -37,6 +37,7 @@ using Eigen::Vector4d;
 
 constexpr int MAX_LOG_ODDS = 5;
 constexpr int MIN_LOG_ODDS = -5;
+constexpr double REACHABLE_RADIUS = 0.21;
 
 class ArmPlanner
 	{
@@ -116,7 +117,7 @@ class ArmPlanner
                 {
                     detection.utime = newBalls.utime;
                     closest->update( detection );
-					closest->updatePrediction( 0.18 );
+					closest->updatePrediction( REACHABLE_RADIUS );
                     corresponded.push_back( closest );
                 }
             }
