@@ -35,6 +35,9 @@
 using Eigen::Vector2d;
 using Eigen::Vector4d;
 
+constexpr int MAX_LOG_ODDS = 5;
+constexpr int MIN_LOG_ODDS = -5;
+
 class ArmPlanner
 	{
 	public:
@@ -125,7 +128,7 @@ class ArmPlanner
                 if(it == balls.end()) break;
                 if ( corresponded.end() == std::find( corresponded.cbegin(), corresponded.cend(), &*it ) )
                 {
-                    if ( it->odds < -10 )
+                    if ( it->odds < MIN_LOG_ODDS )
                         {
                         // purge ball
                         it = balls.erase( it );
@@ -143,7 +146,8 @@ class ArmPlanner
                         bestTime = it->reachPrediction.ball_in_range_time_;
 						bestBall = &*it;
 						}
-                    it->odds = std::max(it->odds, 10);
+                    it->odds = std::max(it->odds, MAX_LOG_ODDS);
+                    ++it;
                 }
             }
 			//outer_loop_controller.update_target( bestBall->reachPrediction );
