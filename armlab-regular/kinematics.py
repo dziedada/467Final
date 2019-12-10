@@ -99,7 +99,7 @@ def check_valid(pose):
 
     return True
 
-def IK(pose, mode):
+def IK(pose, mode, wrist):
     """
     467TODO: implement this function
 
@@ -149,16 +149,18 @@ def IK(pose, mode):
         print(pose, " is out of forearm's reach")
         return None
 
+    wrist_1 = -wrist + theta0_1 + theta1_1
+    wrist_2 = -wrist + theta0_2 + theta1_2    
     if mode == 1:
         if x >= 0.0:
-            return [-math.pi / 2, theta0_1, theta1_1, 0]
+            return [-math.pi / 2, theta0_1, theta1_1, wrist_1]
         else:
-            return [-math.pi / 2, theta0_2, theta1_2, 0]
+            return [-math.pi / 2, theta0_2, theta1_2, wrist_2]
     else:
         if x >= 0.0:
-            return [-math.pi / 2, theta0_2, theta1_2, 0]
+            return [-math.pi / 2, theta0_2, theta1_2, wrist_2]
         else:
-            return [-math.pi / 2, theta0_1, theta1_1, 0]
+            return [-math.pi / 2, theta0_1, theta1_1, wrist_1]
 
 def get_euler_angles_from_T(T):
     """
