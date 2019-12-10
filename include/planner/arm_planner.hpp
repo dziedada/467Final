@@ -153,7 +153,7 @@ class ArmPlanner
 				double innerRadius = 0.13; // TODO i thought we might need this to restrict noisy velocities
 				if ( x > 0 && y != 0 && bestBall->reachPrediction.ball_inrange_position_.norm() > innerRadius )
 					{
-					std::cout << "x: " << x << " y: " << y << std::endl;
+					std::cout << "x: " << y << " y: " << x << std::endl;
 					publishPlan( bestBall->reachPrediction.ball_inrange_position_ );
 					}
 				}
@@ -271,8 +271,8 @@ class ArmPlanner
             std::vector<std::vector< double > > waypoints( 1, std::vector<double>(3, 0));
 
             // Flip X and Y for Arm Coordinate system
-            waypoints[0][0] = endpoint[0];
-            waypoints[0][1] = endpoint[1];
+            waypoints[0][0] = endpoint[1];
+            waypoints[0][1] = endpoint[0];
 			waypoints[0][2] = 1;
             path.waypoints = waypoints;
             path.speed = 1.0;

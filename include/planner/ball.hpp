@@ -207,7 +207,7 @@ class Ball
 					reachPrediction.ball_in_range_time_ = utime + seconds_to_microsends(interval);
 					//cout << "reachPrediction time " << reachPrediction.ball_in_range_time_ << std::endl;
 					reachPrediction.ball_inrange_position_ = position;
-					reachPrediction.ball_inrange_velocity_ = velocity;
+					reachPrediction.ball_inrange_velocity_ = velocity_coord_avg;
 					reachPrediction.goal_ = position;
 					return;
 					}
@@ -243,7 +243,7 @@ class Ball
 			velocityEstimate /= (double)HISTORY_SIZE;
 
 			//std::cout << "vel est final: " << velocityEstimate << std::endl;
-			Vector2d pointEstimate = coordinate + (velocityEstimate * dT);
+			Vector2d pointEstimate = coordinate + (velocity_coord_avg * dT);
 			// std::cout << "prediction: ";
    //          std::cout << "dT " << dT << " dx " << velocityEstimate.x() << " dy " << velocityEstimate.y() << endl;
             //return Vector4d(predState.at<double>(0), predState.at<double>(1), 
@@ -252,7 +252,7 @@ class Ball
 			// TODO: IS this correct?
 
 			return Vector4d( pointEstimate.x(), pointEstimate.y(),
-							velocityEstimate.x(), velocityEstimate.y());
+							velocity_coord_avg.x(), velocity_coord_avg.y());
 		}
 
 		// check to see if the ball will reach radius of us within
