@@ -12,6 +12,9 @@ git remote add upstream git@github.com:dziedada/467Final.git
 echo "Initializing submodules..."
 git submodule update --init --recursive
 
+sudo apt-get update && apt-get upgrade
+sudo apt-get install default-jdk
+
 # Install dependencies
 sudo apt install cmake \
                  cmake-curses-gui \
@@ -28,9 +31,13 @@ sudo apt install cmake \
                  libusb-1.0-0-dev \
                  libusb-1.0-doc \
                  libusb-1.0-0-dbg \
+                 libflann1.8 \
                  python3 \
                  python3-pip \
                  libvtk6-dev \
+                 cython \
+                 cython3 \
+                 libzmq3-dev \
                  -y # system libraries
 
 # Install custom deps

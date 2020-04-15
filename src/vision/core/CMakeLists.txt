@@ -57,3 +57,10 @@ target_link_libraries(Calibrator
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
 )
+
+add_library(CloudTransformer SHARED CloudTransformer.cpp)
+
+target_link_libraries(CloudTransformer
+    ${PCL_LIBRARIES}
+)
+

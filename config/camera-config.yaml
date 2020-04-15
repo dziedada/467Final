@@ -23,26 +23,12 @@ forward:
   publish_pointcloud: true
   enable_autoexposure: false
   publish_pose: false # tracking camera only
-  rotation: # 3x3 rotation matrix left to right first, then top to bottom
-    - 1
-    - 0
-    - 0
-    - 0
-    - 1
-    - 0
-    - 0
-    - 0
-    - 1
-  translation: # 3x1 translation vector
-    - 0
-    - 0
-    - 0
-  sim_rotation: [
-    0, 0, 1,
-    -1, 0, 0,
-    0, -1, 0
-  ]
-  sim_translation: [0, 0, 0]
+  rotation: [
+    -0.00293042, -0.308594, 0.95119,
+    0.999973, 0.00547572, 0.0048572,
+    0.00670734, -0.951178, -0.308569
+  ] # 3x3 rotation matrix left to right first, then top to bottom
+  translation: [-0.334392, -0.0196213, 0.367229] # 3x1 translation vector
 
 downward:
   enabled: false
@@ -55,20 +41,12 @@ downward:
   publish_pointcloud: true
   enable_autoexposure: false
   publish_pose: false # tracking camera only
-  rotation: # 3x3 rotation matrix left to right first, then top to bottom
-    - 1
-    - 0
-    - 0
-    - 0
-    - 1
-    - 0
-    - 0
-    - 0
-    - 1
-  translation: # 3x1 translation vector
-    - 0
-    - 0
-    - 0
+  rotation: [
+    1, 0, 0,
+    0, 1, 0,
+    0, 0, 1 
+  ] # 3x3 rotation matrix left to right first, then top to bottom
+  translation: [0, 0, 0] # 3x1 translation vector
 
 other-forward: # To accomodate the t265 in use with the other cameras
   enabled: false
@@ -80,30 +58,48 @@ other-forward: # To accomodate the t265 in use with the other cameras
   publish_pointcloud: true
   enable_autoexposure: false
   publish_pose: false # tracking camera only
-  rotation: # 3x3 rotation matrix left to right first, then top to bottom
-    - 1
-    - 0
-    - 0
-    - 0
-    - 1
-    - 0
-    - 0
-    - 0
-    - 1
-  translation: # 3x1 translation vector
-    - 0
-    - 0
-    - 0
+  rotation: [
+    -0.0691559, 0.234433, -0.969669,
+    -0.997494, -0.0307733, 0.0637004,
+    0.0149064, -0.971645, -0.235974
+  ] # 3x3 rotation matrix left to right first, then top to bottom
+  translation: [0, 0, 0] # 3x1 translation vector
 
 calibration:
   num_samples_required: 100
   green_ground_truth:
     x: 0.758
-    y: -0.22
+    y: 0.22
     z: 0.021
   orange_ground_truth:
     x: 0.758
-    y: 0.22
+    y: -0.22
+    z: 0.021
+  blue_ground_truth: # Only z matters for now
+    x: 0.0
+    y: 0.0
     z: 0.021
   min_ball_radius: 0.011
   max_ball_radius: 0.04
+
+ball_detector:
+  plane_mask: false
+  x_min: 0.1
+  x_max: 2.5
+  y_min: -0.6
+  y_max: 0.6
+  z_min: 0.000
+  z_max: 0.06
+  ball_radius_min: 0.014
+  ball_radius_max: 0.06
+
+fake_ball_detector:
+  plane_mask: true
+  x_min: 0.1
+  x_max: 3
+  y_min: -0.6
+  y_max: 0.6
+  z_min: 0.009
+  z_max: 0.05
+  ball_radius_min: 0.009
+  ball_radius_max: 0.04

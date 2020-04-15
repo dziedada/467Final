@@ -11,10 +11,6 @@ using std::cout;
 using std::endl;
 using std::string;
 
-const int STREAM_WIDTH = 640;
-const int STREAM_HEIGHT = 480;
-const int STREAM_FPS = 60;
-
 using namespace vision;
 
 RealsenseInterface::RealsenseInterface(YAML::Node config)
@@ -52,6 +48,9 @@ RealsenseInterface::RealsenseInterface(YAML::Node config)
             selection.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>();
         color_intrinsics_ = color_stream.get_intrinsics();
 
+        // Get the extrinsics
+        depth_to_color_ = depth_stream.get_extrinsics_to(color_stream);
+
         // Get sensors
         sensor_color_ = selection.get_device().query_sensors()[0];
         sensor_depth_ = selection.get_device().query_sensors()[1];
@@ -61,16 +60,8 @@ RealsenseInterface::RealsenseInterface(YAML::Node config)
         scale_ = sensor.get_depth_scale();
         std::cout << "Camera scale: " << scale_ << std::endl;
 
-        // Get the extrinsics (very hacky)
-        // rs2_error* memory = (rs2_error*)malloc(5000);
-        rs2_error* memory = nullptr;
-        rs2_stream_profile* depth = reinterpret_cast<rs2_stream_profile*>(&depth_stream);
-        rs2_stream_profile* color = reinterpret_cast<rs2_stream_profile*>(&color_stream);
-        rs2_get_extrinsics(depth, color, &depth_to_color_, &memory);
-
         // Set up the align object
         // rs2_stream align_to = find_stream_to_align(selection.get_streams());
-        align_object_.reset(new rs2::align(RS2_STREAM_COLOR));
     }
 }
 
@@ -118,20 +109,19 @@ bool RealsenseInterface::loadNext()
         // and color information and only publish pos info
         if (!publish_pos_)
         {
-            auto processed = align_object_->process(frames_);
+            unaligned_depth_frame_ = frames_.get_depth_frame();
+            unaligned_rgb_frame_ = frames_.get_color_frame();
 
             // Try to get the frames from processed
-            rgb_frame_ = processed.first_or_default(RS2_STREAM_COLOR);
-            depth_frame_ = processed.get_depth_frame();
-            if (rgb_frame_)
+            if (unaligned_rgb_frame_)
             {
                 color_image_ =
-                    static_cast<const uint16_t*>(rgb_frame_.get_data());
+                    static_cast<const uint16_t*>(unaligned_rgb_frame_.get_data());
             }
-            if (depth_frame_)
+            if (unaligned_depth_frame_)
             {
                 depth_image_ =
-                    static_cast<const uint16_t*>(depth_frame_.get_data());
+                    static_cast<const uint16_t*>(unaligned_depth_frame_.get_data());
             }
         }
         else
@@ -141,6 +131,7 @@ bool RealsenseInterface::loadNext()
         utime_ = std::chrono::duration_cast<std::chrono::microseconds>(
                      std::chrono::system_clock::now().time_since_epoch())
                      .count();
+        has_new_cloud_ = false;
         return true;
     }
     return false;
@@ -152,9 +143,12 @@ RealsenseInterface& RealsenseInterface::operator++()
     return *this;
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr RealsenseInterface::getPointCloudBasic() const
+void RealsenseInterface::compute_clouds()
 {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
+    if (has_new_cloud_) return;
+    ordered_cloud_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(
+        new pcl::PointCloud<pcl::PointXYZ>(width_, height_, pcl::PointXYZ(0, 0, 0)));
+    unordered_cloud_ = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
     for (int dy{0}; dy < depth_intrinsics_.height; ++dy)
     {
         for (int dx{0}; dx < depth_intrinsics_.width; ++dx)
@@ -172,37 +166,31 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr RealsenseInterface::getPointCloudBasic() con
             float depth_point[3];
             rs2_deproject_pixel_to_point(
                 depth_point, &depth_intrinsics_, depth_pixel, depth_in_meters);
-            cloud->push_back(pcl::PointXYZ(depth_point[0], depth_point[1], depth_point[2]));
+            float color_point[3];
+            rs2_transform_point_to_point(color_point, &depth_to_color_, depth_point);
+            float color_pixel[2]; 
+            rs2_project_point_to_pixel(color_pixel, &color_intrinsics_, color_point);
+            unordered_cloud_->push_back(pcl::PointXYZ(depth_point[0], 
+                depth_point[1], depth_point[2]));
+            if (color_pixel[0] < 0 || color_pixel[0] >= width_ || color_pixel[1] < 0 || 
+                color_pixel[1] >= height_) continue;
+            ordered_cloud_->at(color_pixel[0], color_pixel[1]) = pcl::PointXYZ(depth_point[0], 
+                depth_point[1], depth_point[2]);
         }
     }
-    return cloud;
+    has_new_cloud_ = true;
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr RealsenseInterface::getMappedPointCloud() const
+pcl::PointCloud<pcl::PointXYZ>::Ptr RealsenseInterface::getPointCloudBasic()
 {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
-    *cloud = pcl::PointCloud<pcl::PointXYZ>(width_, height_, pcl::PointXYZ(0, 0, 0));
-    for (int dy{0}; dy < depth_intrinsics_.height; ++dy)
-    {
-        for (int dx{0}; dx < depth_intrinsics_.width; ++dx)
-        {
-            // Retrieve depth value and map it to more "real" coordinates
-            uint16_t depth_value = depth_image_[(dy * depth_intrinsics_.width) + dx];
-            float depth_in_meters = depth_value * scale_;
-            // Skip over values with a depth of zero (not found depth)
-            if (depth_value == 0) continue;
-            // For mapping color to depth
-            // Map from pixel coordinates in the depth image to pixel
-            // coordinates in the color image
-            float depth_pixel[2] = {static_cast<float>(dx), static_cast<float>(dy)};
-            // Projects the depth value into 3-D space
-            float depth_point[3];
-            rs2_deproject_pixel_to_point(
-                depth_point, &depth_intrinsics_, depth_pixel, depth_in_meters);
-            cloud->at(dx, dy) = pcl::PointXYZ(depth_point[0], depth_point[1], depth_point[2]);
-        }
-    }
-    return cloud;
+    compute_clouds();
+    return unordered_cloud_;
+}
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr RealsenseInterface::getMappedPointCloud()
+{
+    compute_clouds();
+    return ordered_cloud_;
 }
 
 vision::CameraPoseData RealsenseInterface::getPoseData()
